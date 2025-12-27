@@ -1,86 +1,382 @@
-from flask import Blueprint, request, jsonify # type: ignore
-from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required, get_current_user # type: ignore
-from werkzeug.security import generate_password_hash, check_password_hash # type: ignore
-from api.models import db, User
+from flask import Blueprint, request, jsonify
+from flask_jwt_extended import (
+    create_access_token,
+    jwt_required,
+    get_jwt_identity,
+)
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from .utils.email_utils import send_email  
+from api.models import (
+    db,
+    Usuario,
+    Empresa,
+    Cliente,
+    Instalacion,
+    Mantenimiento,
+)
 
 api = Blueprint("api", __name__)
 
 
+# ======================
+# HEALTH
+# ======================
 @api.route("/hello", methods=["GET"])
 def hello():
-    return jsonify({"message": "Hello World!"})
+    return jsonify({"message": "API OK"})
 
-@api.route("/users", methods=["GET"])
-def get_users():
-    users = User.query.all()
-    return jsonify([user.serialize() for user in users])
 
-@api.route("/users", methods=["POST"])
-def create_user():
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
-    email = data.get("email")
-    active = data.get("active")
-    
-    if not username or not password or not email:
-        return jsonify({"error": "Missing required fields"}), 400
-    
-    user = User.query.filter_by(username=username).first()
-    if user:
-        return jsonify({"error": "Username already exists"}), 400
-    
-    user = User(username=username, password=generate_password_hash(password), email=email, active=active)
+# ======================
+# SETUP (ONE SHOT)
+# ======================
+@api.route("/auth/setup", methods=["POST"])
+def setup():
+    if Usuario.query.first():
+        return jsonify({"message": "Setup already completed"}), 403
+
+    data = request.get_json(silent=True)
+    if not data or not data.get("email") or not data.get("password"):
+        return jsonify({"message": "Invalid data"}), 400
+
+    user = Usuario(
+        nombre=data.get("nombre", "Admin"),
+        email=data["email"],
+        password=generate_password_hash(data["password"]),
+        rol="ADMIN",
+    )
+
     db.session.add(user)
     db.session.commit()
-    
-    return jsonify(user.serialize()), 201
 
-@api.route("/users/<int:user_id>", methods=["GET"])
-def get_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    
-    return jsonify(user.serialize())
+    return jsonify({"message": "Setup completed"}), 201
 
-@api.route("/users/<int:user_id>", methods=["PUT"])
-def update_user(user_id):
-    data = request.get_json()
-    username = data.get("username")
-    password = data.get("password")
+
+# ======================
+# LOGIN
+# ======================
+@api.route("/auth/login", methods=["POST"])
+def login():
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+
     email = data.get("email")
-    active = data.get("active")
-    
-    if not username and not password and not email and not active:
-        return jsonify({"error": "Missing required fields"}), 400
-    
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    
-    if username:
-        user.username = username
-    if password:
-        user.password = generate_password_hash(password)
-    if email:
-        user.email = email
-    if active:
-        user.active = active
-    
-    db.session.commit()
-    
-    return jsonify(user.serialize())
+    password = data.get("password")
 
-@api.route("/users/<int:user_id>", methods=["DELETE"])
-def delete_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    
-    db.session.delete(user)
+    if not email or not password:
+        return jsonify({"message": "Email and password required"}), 400
+
+    user = Usuario.query.filter_by(email=email, activo=True).first()
+    if not user or not check_password_hash(user.password, password):
+        return jsonify({"message": "Invalid credentials"}), 401
+
+    token = create_access_token(identity=user.id)
+
+    return jsonify({"token": token, "user": user.to_dict()})
+
+
+# ======================
+# USUARIOS (ADMIN)
+# ======================
+@api.route("/usuarios", methods=["GET"])
+def get_usuarios():
+    usuarios = Usuario.query.all()
+    return jsonify({"usuarios": [u.to_dict() for u in usuarios]})
+
+
+@api.route("/usuarios", methods=["POST"])
+@jwt_required()
+def create_usuario():
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+
+    if Usuario.query.filter_by(email=data["email"]).first():
+        return jsonify({"message": "Email already exists"}), 409
+
+    user = Usuario(
+        nombre=data["nombre"],
+        email=data["email"],
+        password=generate_password_hash(data["password"]),
+        rol=data.get("rol", "INSTALADOR"),
+        empresa_id=data.get("empresa_id"),
+    )
+
+    db.session.add(user)
     db.session.commit()
+
+    return jsonify({"user": user.to_dict()}), 201
+
+@api.route("/usuarios/<int:id>", methods=["PUT"])
+def update_usuario(id):
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
     
-    return jsonify({"message": "User deleted"}), 204
+    usuario = Usuario.query.get(id)
+    if not usuario:
+        return jsonify({"message": "Usuario no encontrado"}), 404
+    
+    nombre = data.get("nombre")
+    email = data.get("email")
+    password = data.get("password")
+    rol = data.get("rol")
+    empresa_id = data.get("empresa_id")
+    
+    if nombre: usuario.nombre = nombre
+    if email: usuario.email = email
+    if password: usuario.password = generate_password_hash(password)
+    if rol: usuario.rol = rol
+    if empresa_id: usuario.empresa_id = empresa_id
+    
+    db.session.commit()    
+    return jsonify({"usuario": usuario.to_dict()}), 200
+
+
+@api.route("/usuarios/<int:id>", methods=["DELETE"])
+def delete_usuario(id):
+    usuario = Usuario.query.get(id)
+    if not usuario:
+        return jsonify({"message": "Usuario no encontrado"}), 404
+    
+    db.session.delete(usuario)
+    db.session.commit()
+    return jsonify({"message": "Usuario eliminado"}), 200
+
+# ======================
+# EMPRESAS
+# ======================
+@api.route("/empresas", methods=["GET"])
+def get_empresas():
+    empresas = Empresa.query.all()
+    return jsonify({"empresas": [e.to_dict() for e in empresas]})
+
+@api.route("/empresas", methods=["POST"])
+@jwt_required()
+def create_empresa():
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+
+    empresa = Empresa(
+        nombre=data.get("nombre"),
+        plan=data.get("plan"),
+        max_usuarios=data.get("max_usuarios"),
+        activa=data.get("activa"),
+    )
+
+    db.session.add(empresa)
+    db.session.commit()
+    return jsonify({"empresa": empresa.to_dict()}), 201
+
+@api.route("/empresas/<int:id>", methods=["PUT"])
+@jwt_required()
+def update_empresa(id):
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+    
+    empresa = Empresa.query.get(id)
+    if not empresa:
+        return jsonify({"message": "Empresa no encontrada"}), 404
+    
+    empresa.nombre = data.get("nombre")
+    empresa.plan = data.get("plan")
+    empresa.max_usuarios = data.get("max_usuarios")
+    empresa.activa = data.get("activa")
+    
+    db.session.commit()    
+    return jsonify({"empresa": empresa.to_dict()}), 200
+
+@api.route("/empresas/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_empresa(id):
+    empresa = Empresa.query.get(id)
+    if not empresa:
+        return jsonify({"message": "Empresa no encontrada"}), 404
+    
+    db.session.delete(empresa)
+    db.session.commit()
+    return jsonify({"message": "Empresa eliminada"}), 200
+
+
+# ======================
+# CLIENTES
+# ======================
+@api.route("/clientes", methods=["POST"])
+@jwt_required()
+def create_cliente():
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+
+    cliente = Cliente(
+        empresa_id=data["empresa_id"],
+        nombre=data["nombre"],
+        telefono=data.get("telefono"),
+        email=data.get("email"),
+        direccion=data.get("direccion"),
+        lat=data.get("lat"),
+        lng=data.get("lng"),
+        observaciones=data.get("observaciones"),
+    )
+
+    db.session.add(cliente)
+    db.session.commit()
+    return jsonify({"cliente": cliente.to_dict()}), 201
+
+@api.route("/clientes/<int:id>", methods=["PUT"])
+@jwt_required()
+def update_cliente(id):
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+    
+    cliente = Cliente.query.get(id)
+    if not cliente:
+        return jsonify({"message": "Cliente no encontrado"}), 404
+    
+    cliente.nombre = data.get("nombre")
+    cliente.telefono = data.get("telefono")
+    cliente.email = data.get("email")
+    cliente.direccion = data.get("direccion")
+    cliente.lat = data.get("lat")
+    cliente.lng = data.get("lng")
+    cliente.observaciones = data.get("observaciones")
+    
+    db.session.commit()
+    return jsonify({"cliente": cliente.to_dict()}), 200 
+
+@api.route("/clientes/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_cliente(id):
+    cliente = Cliente.query.get(id)
+    if not cliente:
+        return jsonify({"message": "Cliente no encontrado"}), 404
+    
+    db.session.delete(cliente)
+    db.session.commit()
+    return jsonify({"message": "Cliente eliminado"}), 200   
+
+@api.route("/clientes", methods=["GET"])
+def get_clientes():
+    clientes = Cliente.query.all()
+    return jsonify({"clientes": [c.to_dict() for c in clientes]})
+
+
+# ======================
+# INSTALACIONES
+# ======================
+@api.route("/instalaciones", methods=["POST"])
+@jwt_required()
+def create_instalacion():
+    data = request.get_json(silent=True)
+
+    instalacion = Instalacion(
+        empresa_id=data["empresa_id"],
+        cliente_id=data["cliente_id"],
+        instalador_id=data["instalador_id"],
+        tipo_sistema=data["tipo_sistema"],
+        fecha_instalacion=data["fecha_instalacion"],
+        frecuencia_meses=data.get("frecuencia_meses", 6),
+        proximo_mantenimiento=data.get("proximo_mantenimiento"),
+    )
+
+    db.session.add(instalacion)
+    db.session.commit()
+    return jsonify({"instalacion": instalacion.to_dict()}), 201
+
+@api.route("/instalaciones/<int:id>", methods=["PUT"])
+@jwt_required()
+def update_instalacion(id):
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+    
+    instalacion = Instalacion.query.get(id)
+    if not instalacion:
+        return jsonify({"message": "Instalación no encontrada"}), 404
+    
+    instalacion.empresa_id = data.get("empresa_id")
+    instalacion.cliente_id = data.get("cliente_id")
+    instalacion.instalador_id = data.get("instalador_id")
+    instalacion.tipo_sistema = data.get("tipo_sistema")
+    instalacion.fecha_instalacion = data.get("fecha_instalacion")
+    instalacion.frecuencia_meses = data.get("frecuencia_meses")
+    instalacion.proximo_mantenimiento = data.get("proximo_mantenimiento")
+    
+    db.session.commit()    
+    return jsonify({"instalacion": instalacion.to_dict()}), 200
+
+@api.route("/instalaciones/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_instalacion(id):
+    instalacion = Instalacion.query.get(id)
+    if not instalacion:
+        return jsonify({"message": "Instalación no encontrada"}), 404
+    
+    db.session.delete(instalacion)
+    db.session.commit()
+    return jsonify({"message": "Instalación eliminada"}), 200   
+
+@api.route("/instalaciones", methods=["GET"])
+def get_instalaciones():
+    instalaciones = Instalacion.query.all()
+    return jsonify({"instalaciones": [i.to_dict() for i in instalaciones]})
+
+# ======================
+# MANTENIMIENTOS
+# ======================
+@api.route("/mantenimientos", methods=["POST"])
+@jwt_required()
+def create_mantenimiento():
+    data = request.get_json(silent=True)
+
+    mantenimiento = Mantenimiento(
+        empresa_id=data["empresa_id"],
+        instalacion_id=data["instalacion_id"],
+        realizado_por=data["realizado_por"],
+        fecha=data["fecha"],
+        notas=data.get("notas"),
+    )
+
+    db.session.add(mantenimiento)
+    db.session.commit()
+    return jsonify({"mantenimiento": mantenimiento.to_dict()}), 201
+
+@api.route("/mantenimientos/<int:id>", methods=["PUT"])
+@jwt_required()
+def update_mantenimiento(id):
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+    
+    mantenimiento = Mantenimiento.query.get(id)
+    if not mantenimiento:
+        return jsonify({"message": "Mantenimiento no encontrado"}), 404
+    
+    mantenimiento.empresa_id = data.get("empresa_id")
+    mantenimiento.instalacion_id = data.get("instalacion_id")
+    mantenimiento.realizado_por = data.get("realizado_por")
+    mantenimiento.fecha = data.get("fecha")
+    mantenimiento.notas = data.get("notas")
+    
+    db.session.commit()    
+    return jsonify({"mantenimiento": mantenimiento.to_dict()}), 200
+
+@api.route("/mantenimientos/<int:id>", methods=["DELETE"])    
+@jwt_required()
+def delete_mantenimiento(id):
+    mantenimiento = Mantenimiento.query.get(id)
+    if not mantenimiento:
+        return jsonify({"message": "Mantenimiento no encontrado"}), 404
+    
+    db.session.delete(mantenimiento)
+    db.session.commit()
+    return jsonify({"message": "Mantenimiento eliminado"}), 200   
+
+@api.route("/mantenimientos", methods=["GET"])
+def get_mantenimientos():
+    mantenimientos = Mantenimiento.query.all()    
+    return jsonify({"mantenimientos": [m.to_dict() for m in mantenimientos]})
+

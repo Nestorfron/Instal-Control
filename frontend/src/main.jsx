@@ -3,6 +3,8 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AppProvider } from "./context/AppContext";
 import './styles/index.css';
+import "leaflet/dist/leaflet.css";
+
 
 import { registerSW } from 'virtual:pwa-register';
 

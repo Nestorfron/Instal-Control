@@ -21,6 +21,7 @@ export const fetchData = async (endpoint) => {
 };
 
 export const postData = async (endpoint, payload, token, extraHeaders = {}) => {
+  console.log("POST", endpoint, payload, token, extraHeaders);
   const url = buildUrl(endpoint);
   const headers = {
     "Content-Type": "application/json",
@@ -92,9 +93,9 @@ export const deleteData = async (endpoint, token) => {
   }
 };
 
-export const loginUser = async (correo, password) => {
-  const url = buildUrl("/login");
-  const payload = { correo, password };
+export const loginUser = async (email, password) => {
+  const url = buildUrl("auth/login");
+  const payload = { email, password };
   const headers = {
     "Content-Type": "application/json",
   }

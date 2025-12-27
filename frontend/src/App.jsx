@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { registerSW } from "virtual:pwa-register";
 
 import Home from "./pages/Home";
+import Login from "./pages/Login";
+import NuevoLugarPage from "./pages/NuevoLugarPage";
 
 
 function App() {
@@ -32,7 +34,9 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/lugares/nuevo" element={<NuevoLugarPage />} />
         </Routes>
       </BrowserRouter>
 
