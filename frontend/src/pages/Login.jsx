@@ -41,9 +41,10 @@ const LoginSetup = () => {
       // Login
       const data = await loginUser(form.correo, form.password);
 
+
       // Guardar token y usuario en AppContext
       setToken(data.access_token || data.token);
-      setUsuario(data.user || null);
+      setUsuario(data.usuario || null);
 
       // Opcional: guardar en localStorage para persistencia
       localStorage.setItem("token", data.access_token || data.token);
@@ -85,8 +86,8 @@ const LoginSetup = () => {
           <Input
             icon={Mail}
             name="correo"
-            type="email"
-            placeholder="Correo"
+            type="text"
+            placeholder="Correo/Usuario"
             value={form.correo}
             onChange={handleChange}
           />

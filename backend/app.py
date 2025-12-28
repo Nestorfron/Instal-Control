@@ -23,6 +23,8 @@ def create_app():
     JWTManager(app)
     Migrate(app, db)
 
+    
+
     # Admin panel
     admin = Admin(app, name='Panel Admin')
     admin.add_view(ModelView(Usuario, db.session))

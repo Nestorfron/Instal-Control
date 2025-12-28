@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify
+from sqlalchemy import or_
 from flask_jwt_extended import (
     create_access_token,
     jwt_required,
@@ -56,24 +57,33 @@ def setup():
 # ======================
 @api.route("/auth/login", methods=["POST"])
 def login():
-    data = request.get_json(force=True)
-    if not data:
-        return jsonify({"message": "Invalid JSON"}), 400
+    data = request.get_json()
 
-    email = data.get("email")
+    email = data.get("email")  
     password = data.get("password")
 
     if not email or not password:
-        return jsonify({"message": "Email and password required"}), 400
+        return {"error": "Datos incompletos"}, 400
 
-    user = Usuario.query.filter_by(email=email, activo=True).first()
-    if not user or not check_password_hash(user.password, password):
-        return jsonify({"message": "Invalid credentials"}), 401
+    usuario = Usuario.query.filter(
+        or_(
+            Usuario.email == email,
+            Usuario.username == email
+        )
+    ).first()
 
-    token = create_access_token(identity=user.id)
+    if not usuario or not check_password_hash(usuario.password, password):
+        return {"error": "Credenciales inválidas"}, 401
 
-    return jsonify({"token": token, "user": user.to_dict()})
+    if not usuario.activo:
+        return {"error": "Usuario inactivo"}, 403
 
+    token = create_access_token(identity=usuario.id)
+
+    return {
+        "token": token,
+        "usuario": usuario.to_dict()
+    }
 
 # ======================
 # USUARIOS (ADMIN)
@@ -97,6 +107,7 @@ def create_usuario():
     user = Usuario(
         nombre=data["nombre"],
         email=data["email"],
+        username=data.get("username"),
         password=generate_password_hash(data["password"]),
         rol=data.get("rol", "INSTALADOR"),
         empresa_id=data.get("empresa_id"),
@@ -119,12 +130,14 @@ def update_usuario(id):
     
     nombre = data.get("nombre")
     email = data.get("email")
+    username = data.get("username")
     password = data.get("password")
     rol = data.get("rol")
     empresa_id = data.get("empresa_id")
     
     if nombre: usuario.nombre = nombre
     if email: usuario.email = email
+    if username: usuario.username = username
     if password: usuario.password = generate_password_hash(password)
     if rol: usuario.rol = rol
     if empresa_id: usuario.empresa_id = empresa_id
@@ -297,13 +310,21 @@ def update_instalacion(id):
     if not instalacion:
         return jsonify({"message": "Instalación no encontrada"}), 404
     
-    instalacion.empresa_id = data.get("empresa_id")
-    instalacion.cliente_id = data.get("cliente_id")
-    instalacion.instalador_id = data.get("instalador_id")
-    instalacion.tipo_sistema = data.get("tipo_sistema")
-    instalacion.fecha_instalacion = data.get("fecha_instalacion")
-    instalacion.frecuencia_meses = data.get("frecuencia_meses")
-    instalacion.proximo_mantenimiento = data.get("proximo_mantenimiento")
+    empresa_id = data.get("empresa_id")
+    cliente_id = data.get("cliente_id")
+    instalador_id = data.get("instalador_id")
+    tipo_sistema = data.get("tipo_sistema")
+    fecha_instalacion = data.get("fecha_instalacion")
+    frecuencia_meses = data.get("frecuencia_meses")
+    proximo_mantenimiento = data.get("proximo_mantenimiento")
+
+    if empresa_id: instalacion.empresa_id = empresa_id
+    if cliente_id: instalacion.cliente_id = cliente_id
+    if instalador_id: instalacion.instalador_id = instalador_id
+    if tipo_sistema: instalacion.tipo_sistema = tipo_sistema
+    if fecha_instalacion: instalacion.fecha_instalacion = fecha_instalacion
+    if frecuencia_meses: instalacion.frecuencia_meses = frecuencia_meses
+    if proximo_mantenimiento: instalacion.proximo_mantenimiento = proximo_mantenimiento
     
     db.session.commit()    
     return jsonify({"instalacion": instalacion.to_dict()}), 200

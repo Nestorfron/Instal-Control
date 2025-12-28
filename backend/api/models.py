@@ -4,6 +4,9 @@ from config import Config
 db = SQLAlchemy(engine_options=Config.SQLALCHEMY_ENGINE_OPTIONS)
 
 
+# =========================
+# EMPRESA
+# =========================
 class Empresa(db.Model):
     __tablename__ = "empresas"
 
@@ -16,6 +19,35 @@ class Empresa(db.Model):
 
     created_at = db.Column(db.DateTime, default=db.func.now())
 
+    # RELACIONES
+    usuarios = db.relationship(
+        "Usuario",
+        back_populates="empresa",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
+    clientes = db.relationship(
+        "Cliente",
+        back_populates="empresa",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
+    instalaciones = db.relationship(
+        "Instalacion",
+        back_populates="empresa",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
+    mantenimientos = db.relationship(
+        "Mantenimiento",
+        back_populates="empresa",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -26,38 +58,61 @@ class Empresa(db.Model):
         }
 
 
+# =========================
+# USUARIO
+# =========================
 class Usuario(db.Model):
     __tablename__ = "usuarios"
 
     id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"))
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
 
     nombre = db.Column(db.String(120), nullable=False)
+    username = db.Column(db.String(120), unique=True, nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
 
-    rol = db.Column(db.String(30), nullable=False)  
+    rol = db.Column(db.String(30), nullable=False)
     # ADMIN | SUPERVISOR | INSTALADOR
 
     activo = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=db.func.now())
+
+    # RELACIONES
+    empresa = db.relationship("Empresa", back_populates="usuarios")
+
+    instalaciones = db.relationship(
+        "Instalacion",
+        back_populates="instalador",
+        lazy="selectin",
+    )
+
+    mantenimientos = db.relationship(
+        "Mantenimiento",
+        back_populates="tecnico",
+        lazy="selectin",
+    )
 
     def to_dict(self):
         return {
             "id": self.id,
             "empresa_id": self.empresa_id,
             "nombre": self.nombre,
+            "username": self.username,
             "email": self.email,
             "rol": self.rol,
             "activo": self.activo,
         }
 
 
+# =========================
+# CLIENTE
+# =========================
 class Cliente(db.Model):
     __tablename__ = "clientes"
 
     id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"))
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
 
     nombre = db.Column(db.String(120), nullable=False)
     telefono = db.Column(db.String(50))
@@ -72,6 +127,16 @@ class Cliente(db.Model):
 
     created_at = db.Column(db.DateTime, default=db.func.now())
 
+    # RELACIONES
+    empresa = db.relationship("Empresa", back_populates="clientes")
+
+    instalaciones = db.relationship(
+        "Instalacion",
+        back_populates="cliente",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -84,15 +149,19 @@ class Cliente(db.Model):
             "lng": self.lng,
             "observaciones": self.observaciones,
             "activo": self.activo,
+            "instalaciones": [i.to_dict() for i in self.instalaciones],
         }
 
 
+# =========================
+# INSTALACION
+# =========================
 class Instalacion(db.Model):
     __tablename__ = "instalaciones"
 
     id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"))
-    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"))
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=False)
     instalador_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"))
 
     tipo_sistema = db.Column(db.String(50))
@@ -105,6 +174,20 @@ class Instalacion(db.Model):
     activa = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=db.func.now())
 
+    # RELACIONES
+    empresa = db.relationship("Empresa", back_populates="instalaciones")
+
+    cliente = db.relationship("Cliente", back_populates="instalaciones")
+
+    instalador = db.relationship("Usuario", back_populates="instalaciones")
+
+    mantenimientos = db.relationship(
+        "Mantenimiento",
+        back_populates="instalacion",
+        lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -116,24 +199,38 @@ class Instalacion(db.Model):
             "frecuencia_meses": self.frecuencia_meses,
             "proximo_mantenimiento": (
                 self.proximo_mantenimiento.isoformat()
-                if self.proximo_mantenimiento else None
+                if self.proximo_mantenimiento
+                else None
             ),
             "activa": self.activa,
+            "mantenimientos": [m.to_dict() for m in self.mantenimientos],
         }
 
 
+# =========================
+# MANTENIMIENTO
+# =========================
 class Mantenimiento(db.Model):
     __tablename__ = "mantenimientos"
 
     id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"))
-    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"))
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    instalacion_id = db.Column(
+        db.Integer, db.ForeignKey("instalaciones.id"), nullable=False
+    )
     realizado_por = db.Column(db.Integer, db.ForeignKey("usuarios.id"))
 
     fecha = db.Column(db.Date, nullable=False)
     notas = db.Column(db.Text)
 
     created_at = db.Column(db.DateTime, default=db.func.now())
+
+    # RELACIONES
+    empresa = db.relationship("Empresa", back_populates="mantenimientos")
+
+    instalacion = db.relationship("Instalacion", back_populates="mantenimientos")
+
+    tecnico = db.relationship("Usuario", back_populates="mantenimientos")
 
     def to_dict(self):
         return {
@@ -146,11 +243,11 @@ class Mantenimiento(db.Model):
         }
 
 
-
-
-# Índices
+# =========================
+# INDICES
+# =========================
+db.Index("idx_usuario_empresa", Usuario.empresa_id)
 db.Index("idx_cliente_empresa", Cliente.empresa_id)
 db.Index("idx_instalacion_empresa", Instalacion.empresa_id)
 db.Index("idx_mantenimiento_empresa", Mantenimiento.empresa_id)
 db.Index("idx_mantenimiento_instalacion", Mantenimiento.instalacion_id)
-db.Index("idx_usuario_empresa", Usuario.empresa_id)

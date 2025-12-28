@@ -10,10 +10,11 @@ import {
 import { useAppContext } from "../context/AppContext";
 import MapView from "../components/MapView";
 import Logo from "../assets/logo.png";
+import BottomNavbar from "../components/BottomNavbar";
 
 const Home = () => {
   const navigate = useNavigate();
-  const { clientes } = useAppContext();
+  const { clientes, instalaciones } = useAppContext();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -23,6 +24,19 @@ const Home = () => {
     navigate("/", { replace: true });
   };
 
+  const DIAS_ADELANTE = 30;
+
+  const hoy = new Date();
+  const limite = new Date();
+  limite.setDate(hoy.getDate() + DIAS_ADELANTE);
+
+  const instalacionesPendientes = instalaciones.filter((inst) => {
+    if (!inst.proximo_mantenimiento) return false;
+
+    const fecha = new Date(inst.proximo_mantenimiento);
+
+    return inst.activa && fecha >= hoy && fecha <= limite;
+  });
 
   return (
     <div className="relative min-h-screen bg-gray-50 dark:bg-slate-900 px-4 pb-28">
@@ -46,7 +60,7 @@ const Home = () => {
       </button>
 
       {/* LOGO / EMPRESA */}
-      <header className="pt-6 pb-8 flex flex-col items-center">
+      <header className="pt-4 pb-4 flex flex-col items-center">
         <div
           className="
             
@@ -57,12 +71,8 @@ const Home = () => {
             shadow-lg
           "
         >
-          <img src={Logo} alt="Logo" className="h-16 w-16" />
+          <img src={Logo} alt="Logo" className="h-24 w-24" />
         </div>
-
-        <span className="mt-3 text-sm font-medium text-gray-800 dark:text-gray-200">
-          { "Gestión de Servicios"}
-        </span>
       </header>
 
       {/* ACCIONES PRINCIPALES */}
@@ -105,16 +115,28 @@ const Home = () => {
       </section>
 
       {/* RESUMEN OPERATIVO */}
-      <section className="grid grid-cols-3 gap-3 mb-6">
-        <SummaryCard icon={Building2} label="Clientes" value={clientes.length} />
-        <SummaryCard icon={CalendarCheck} label="Hoy" value={3} />
-        <SummaryCard icon={Wrench} label="Pendientes" value={3} />
+      <section className="grid grid-cols-2 gap-3 mb-6">
+        <button onClick={() => navigate("/clientes")}>
+          <SummaryCard
+            icon={Building2}
+            label="Clientes"
+            value={clientes.length}
+          />
+        </button>
+        <button onClick={() => navigate("/pendientes")}>
+          <SummaryCard
+            icon={Wrench}
+            label="Pendientes"
+            value={instalacionesPendientes.length}
+          />
+        </button>
       </section>
 
       {/* MAPA */}
-      <section className="mb-8">
+      <section className="mb-2">
         <MapView lugares={clientes} />
       </section>
+      <BottomNavbar />
     </div>
   );
 };
@@ -135,9 +157,8 @@ const SummaryCard = ({ icon: Icon, label, value }) => (
     <span className="text-lg font-semibold text-gray-900 dark:text-white">
       {value}
     </span>
-    <span className="text-xs text-gray-500 dark:text-gray-400">
-      {label}
-    </span>
+    <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
+
   </div>
 );
 

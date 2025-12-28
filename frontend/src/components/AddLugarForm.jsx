@@ -1,10 +1,14 @@
 import { useState, useEffect } from "react";
 import MapSelector from "./MapSelector";
 import { useAppContext } from "../context/AppContext";
-import { postData, fetchData } from "../utils/api";
+import { postData } from "../utils/api";
 
 export default function AddLugarForm({ clientes = [] }) {
-  const { usuario, token } = useAppContext();
+  const { usuario, token, reLoadClientes } = useAppContext();
+
+  // Fecha de hoy en formato YYYY-MM-DD
+  const hoy = new Date().toISOString().split("T")[0];
+
   const [form, setForm] = useState({
     empresa_id: "",
     nombre: "",
@@ -13,14 +17,28 @@ export default function AddLugarForm({ clientes = [] }) {
     direccion: "",
     observaciones: "",
     tipo_sistema: "",
-    fecha_instalacion: "",
-    frecuencia_meses: 6,
-    proximo_mantenimiento: "",
+    fecha_instalacion: hoy,
+    frecuencia_meses: "",
+    proximo_mantenimiento: "", 
   });
+
+
   const [position, setPosition] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+
+
+  useEffect(() => {
+    if (!form.fecha_instalacion || !form.frecuencia_meses) return;
+
+    const fecha = new Date(form.fecha_instalacion);
+    fecha.setMonth(fecha.getMonth() + Number(form.frecuencia_meses));
+    setForm((prev) => ({
+      ...prev,
+      proximo_mantenimiento: fecha.toISOString().split("T")[0],
+    }));
+  }, [ form.fecha_instalacion, form.frecuencia_meses ]);
 
   // Obtener posición inicial del usuario
   useEffect(() => {
@@ -57,7 +75,7 @@ export default function AddLugarForm({ clientes = [] }) {
         lat: position[0],
         lng: position[1],
       };
-      const clienteRes = await postData("/clientes", clienteData, token); // <-- pasamos token
+      const clienteRes = await postData("/clientes", clienteData, token);
       if (!clienteRes?.cliente) throw new Error("Error creando cliente");
 
       // Crear instalación si hay datos
@@ -71,10 +89,11 @@ export default function AddLugarForm({ clientes = [] }) {
           frecuencia_meses: form.frecuencia_meses,
           proximo_mantenimiento: form.proximo_mantenimiento || null,
         };
-        await postData("/instalaciones", instalacionData, token); // <-- token también aquí
+        await postData("/instalaciones", instalacionData, token);
       }
 
       setMessage("Lugar agregado correctamente");
+      reLoadClientes();
       setForm({
         nombre: "",
         telefono: "",
@@ -82,7 +101,7 @@ export default function AddLugarForm({ clientes = [] }) {
         direccion: "",
         observaciones: "",
         tipo_sistema: "",
-        fecha_instalacion: "",
+        fecha_instalacion: hoy,
         frecuencia_meses: 6,
         proximo_mantenimiento: "",
       });
@@ -96,7 +115,7 @@ export default function AddLugarForm({ clientes = [] }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 pb-20">
+    <form onSubmit={handleSubmit} className="space-y-4 pb-20 m-2">
       <input
         name="nombre"
         value={form.nombre}
@@ -133,7 +152,6 @@ export default function AddLugarForm({ clientes = [] }) {
         placeholder="Observaciones"
         className="w-full border rounded px-2 py-1 dark:bg-slate-700"
       />
-
       <input
         name="tipo_sistema"
         value={form.tipo_sistema}
@@ -141,31 +159,43 @@ export default function AddLugarForm({ clientes = [] }) {
         placeholder="Tipo de sistema (opcional)"
         className="w-full border rounded px-2 py-1 dark:bg-slate-700"
       />
-      <input
-        type="date"
-        name="fecha_instalacion"
-        value={form.fecha_instalacion}
-        onChange={handleChange}
-        className="w-full border rounded px-2 py-1 dark:bg-slate-700"
-      />
+      <div className="flex items-center justify-between">
+        <p>Fecha inst.</p>
+        <input
+          type="date"
+          name="fecha_instalacion"
+          value={form.fecha_instalacion}
+          onChange={handleChange}
+          className="w-full border rounded px-2 py-1 dark:bg-slate-700"
+        />
+      </div>
+
       <input
         type="number"
         name="frecuencia_meses"
         value={form.frecuencia_meses}
         onChange={handleChange}
-        placeholder="Frecuencia en meses"
+        placeholder="Mantenimientos en meses"
         className="w-full border rounded px-2 py-1 dark:bg-slate-700"
         min={1}
       />
-      <input
-        type="date"
-        name="proximo_mantenimiento"
-        value={form.proximo_mantenimiento}
-        onChange={handleChange}
-        className="w-full border rounded px-2 py-1 dark:bg-slate-700"
-      />
 
-      <MapSelector position={position} setPosition={setPosition} clientes={clientes} />
+      <div className="flex items-center justify-between">
+        <p>Prox. Mant.</p>
+        <input
+          type="date"
+          name="proximo_mantenimiento"
+          value={form.proximo_mantenimiento}
+          readOnly
+          className="w-full border rounded px-2 py-1 bg-gray-100 dark:bg-slate-600"
+        />
+      </div>
+
+      <MapSelector
+        position={position}
+        setPosition={setPosition}
+        clientes={clientes}
+      />
 
       <button
         type="submit"
@@ -174,7 +204,8 @@ export default function AddLugarForm({ clientes = [] }) {
       >
         {loading ? "Guardando..." : "Agregar lugar"}
       </button>
-
+      
     </form>
+    
   );
 }
