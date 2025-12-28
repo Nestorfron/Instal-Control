@@ -21,7 +21,6 @@ export const fetchData = async (endpoint) => {
 };
 
 export const postData = async (endpoint, payload, token, extraHeaders = {}) => {
-  console.log(endpoint, payload, token, extraHeaders);
   const url = buildUrl(endpoint);
   const headers = {
     "Content-Type": "application/json",

@@ -8,6 +8,7 @@ import NuevoLugarPage from "./pages/NuevoLugarPage";
 import ClientesPage from "./pages/Clientes";
 import NuevoMantenimientoPage from "./pages/NuevoMantenimientoPage";
 import Pendientes from "./pages/Pendientes";
+import NuevaInstalacion from "./pages/NuevaInstalacion";
 
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
           <Route path="/clientes" element={<ClientesPage />} />
           <Route path="/mantenimientos/nuevo" element={<NuevoMantenimientoPage />} />
           <Route path="/pendientes" element={<Pendientes />} />
+          <Route path="/instalaciones/nueva/:clienteId" element={<NuevaInstalacion />} />
         </Routes>
       </BrowserRouter>
 

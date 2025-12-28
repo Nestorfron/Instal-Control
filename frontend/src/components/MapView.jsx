@@ -28,7 +28,7 @@ function FollowPosition({ position, isFollowing }) {
 
 export default function MapView({ lugares }) {
   const [position, setPosition] = useState(null);
-  const [isFollowing, setIsFollowing] = useState(true);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   useEffect(() => {
     const watchId = navigator.geolocation.watchPosition(

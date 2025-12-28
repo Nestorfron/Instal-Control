@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { putData } from "../utils/api";
-import { Search } from "lucide-react";
+import { Search, PlusCircle } from "lucide-react";
 import BottomNavbar from "../components/BottomNavbar";
 
 const ClientesPage = () => {
@@ -86,9 +86,20 @@ const ClientesPage = () => {
             {/* CLIENTE */}
             <div className="flex flex-col sm:flex-row sm:justify-between gap-2 mb-4">
               <div>
-                <h2 className="text-xl font-semibold text-blue-700 dark:text-blue-400">
-                  {cliente.nombre}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-semibold text-blue-700 dark:text-blue-400">
+                    {cliente.nombre}
+                  </h2>
+                  <button
+                    onClick={() =>
+                      navigate(`/instalaciones/nueva/${cliente.id}`)
+                    }
+                    className="ms-auto"
+                    title="Agregar instalación"
+                  >
+                    <PlusCircle className="h-5 w-5 text-blue-600 hover:text-blue-700" />
+                  </button>
+                </div>
 
                 <div className="text-sm text-gray-600 dark:text-gray-400">
                   {cliente.telefono && <p>📞 {cliente.telefono}</p>}
