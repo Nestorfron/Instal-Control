@@ -3,8 +3,11 @@ import {
   Home,
   Building2,
   Wrench,
-  Bell,
   User,
+  Plus,
+  Search,
+  CheckCircle,
+  Settings,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -12,89 +15,97 @@ const BottomNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const menuItems = [
-    { key: "home", icon: Home, path: "/home", label: "Inicio" },
-    {
-      key: "clientes",
-      icon: Building2,
-      path: "/clientes",
-      label: "Clientes",
-    },
-    {
-      key: "pendientes",
-      icon: Wrench,
-      path: "/pendientes",
-      label: "Pendientes",
-    },
-    { key: "perfil", icon: User, path: "#", label: "Perfil" },
+  const items = [
+    { icon: Home, path: "/home" },
+    { icon: Building2, path: "/clientes" },
+    { spacer: true },
+    { icon: Wrench, path: "/pendientes" },
+    { icon: User, path: "/perfil" },
   ];
 
+  const centerActions = {
+    "/home": {
+      icon: Search,
+      action: () => console.log("Buscar"),
+    },
+    "/clientes": {
+      icon: Plus,
+      action: () => navigate("/clientes/nuevo"),
+    },
+    "/pendientes": {
+      icon: CheckCircle,
+      action: () => console.log("Resolver pendientes"),
+    },
+    "/perfil": {
+      icon: Settings,
+      action: () => navigate("/perfil"),
+    },
+  };
+
+  const center = centerActions[location.pathname];
+
   return (
-    <>
-      {/* BOTTOM NAV */}
-      <nav
+    <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+      <div
         className="
-          fixed bottom-0 left-0 right-0 z-50
-          bg-white dark:bg-slate-900
-          border-t border-gray-200 dark:border-slate-800
-          shadow-lg pb-6
+          relative flex items-center gap-3 px-6 py-3
+          rounded-2xl
+          bg-white/80 dark:bg-slate-900/80
+          backdrop-blur-md
+          shadow-xl border border-gray-200/50 dark:border-slate-700/50
         "
       >
-        <div className="flex justify-around items-center h-16 px-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
+        {items.map((item, index) => {
+          if (item.spacer) return <div key={index} className="w-10" />;
 
-            return (
-              <button
-                key={item.key}
-                onClick={() => navigate(item.path)}
-                className="flex flex-col items-center justify-center w-16"
-              >
-                <div
-                  className={`
-                    relative p-2 rounded-xl transition-all duration-200
-                    ${
-                      isActive
-                        ? "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 shadow-sm"
-                        : "text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400"
-                    }
-                  `}
-                >
-                  <Icon size={24} />
-                </div>
+          const Icon = item.icon;
+          const isActive = location.pathname === item.path;
 
-                <span
-                  className={`mt-1 text-[11px] font-medium ${
+          return (
+            <button
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              className="
+                group flex items-center justify-center
+                w-10 h-10 rounded-xl
+                transition-all duration-200
+              "
+            >
+              <Icon
+                size={24}
+                className={`
+                  transition-all
+                  ${
                     isActive
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-gray-500 dark:text-gray-400"
-                  }`}
-                >
-                  {item.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+                      ? "text-blue-600 dark:text-blue-400 scale-110"
+                      : "text-gray-400 dark:text-gray-500 group-hover:text-blue-500"
+                  }
+                `}
+              />
+            </button>
+          );
+        })}
 
-      {/* FOOTER */}
-      <footer className="pt-4 text-center text-xs text-gray-500 dark:text-gray-400">
-        <p>
-          GSP — desarrollado por{" "}
-          <a
-            href="https://github.com/nestorfron"
-            target="_blank"
-            rel="noreferrer"
-            className="text-blue-600 dark:text-blue-400"
+        {/* BOTÓN CENTRAL */}
+        {center && (
+          <button
+            onClick={center.action}
+            className="
+              absolute -top-4 left-1/2 -translate-x-1/2
+              w-14 h-14 rounded-2xl
+              bg-blue-600 hover:bg-blue-700
+              dark:bg-blue-500 dark:hover:bg-blue-600
+              text-white
+              shadow-xl
+              flex items-center justify-center
+              transition-transform active:scale-95
+            "
           >
-            Nestor Frones
-          </a>
-        </p>
-        <p>Todos los derechos reservados — © 2025</p>
-      </footer>
-    </>
+            <center.icon size={28} />
+          </button>
+        )}
+      </div>
+    </nav>
   );
 };
 

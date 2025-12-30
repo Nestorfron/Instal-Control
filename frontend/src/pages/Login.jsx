@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Building2, Lock, Mail, User } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import Logo from "../assets/logo.png";
+import Logo2 from "../assets/logo-2.png";
 
 const LoginSetup = () => {
   const navigate = useNavigate();
@@ -64,8 +65,9 @@ const LoginSetup = () => {
       <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-slate-700">
         {/* Header */}
         <div className="flex flex-col items-center mb-6">
-          <div >
+          <div className="flex items-center gap-6">
             <img src={Logo} alt="Logo" className="h-16 w-16 mb-4" />
+            <img src={Logo2} alt="Logo secundario" className="h-16 w-16 mb-4" />
           </div>
           <h1 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">
             {modoSetup ? "Crear administrador" : "Iniciar sesión"}

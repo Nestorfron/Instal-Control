@@ -4,6 +4,7 @@ import { registerSW } from "virtual:pwa-register";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Perfil from "./pages/Perfil";
 import NuevoLugarPage from "./pages/NuevoLugarPage";
 import ClientesPage from "./pages/Clientes";
 import NuevoMantenimientoPage from "./pages/NuevoMantenimientoPage";
@@ -40,6 +41,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/perfil" element={<Perfil />} />
           <Route path="/lugares/nuevo" element={<NuevoLugarPage />} />
           <Route path="/clientes" element={<ClientesPage />} />
           <Route path="/mantenimientos/nuevo" element={<NuevoMantenimientoPage />} />
