@@ -48,7 +48,7 @@ const BottomNavbar = () => {
     <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
       <div
         className="
-          relative flex items-center gap-3 px-6 py-3
+          relative flex items-center gap-5 px-6 py-3
           rounded-2xl
           bg-white/80 dark:bg-slate-900/80
           backdrop-blur-md

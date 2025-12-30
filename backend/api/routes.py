@@ -401,3 +401,30 @@ def get_mantenimientos():
     mantenimientos = Mantenimiento.query.all()    
     return jsonify({"mantenimientos": [m.to_dict() for m in mantenimientos]})
 
+# ======================
+# CHANGE PASSWORD
+# ======================
+
+@api.route("/usuarios/<int:id>/password", methods=["PUT"])
+@jwt_required()
+def change_password(id):
+    data = request.get_json(force=True)
+
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+
+    if not current_password or not new_password:
+        return jsonify({"message": "Datos incompletos"}), 400
+
+    usuario = Usuario.query.get(id)
+    if not usuario:
+        return jsonify({"message": "Usuario no encontrado"}), 404
+
+    # Verificar contraseña actual
+    if not check_password_hash(usuario.password, current_password):
+        return jsonify({"message": "Contraseña actual incorrecta"}), 401
+
+    usuario.password = generate_password_hash(new_password)
+    db.session.commit()
+
+    return jsonify({"message": "Contraseña actualizada correctamente"}), 200
