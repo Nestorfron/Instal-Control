@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { putData } from "../utils/api";
 import { Search, PlusCircle, Pencil } from "lucide-react";
@@ -9,16 +9,38 @@ const ClientesPage = () => {
   const { clientes, reLoadClientes, token } = useAppContext();
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [editandoInstalacionId, setEditandoInstalacionId] = useState(null);
   const [nuevaFecha, setNuevaFecha] = useState("");
   const [loadingInstalacion, setLoadingInstalacion] = useState(false);
-
   const [instalacionExpandida, setInstalacionExpandida] = useState(null);
 
   useEffect(() => {
     reLoadClientes();
   }, []);
+
+  /* 🔽 SCROLL DESDE BUSCADOR GLOBAL */
+  useEffect(() => {
+    if (!location.state?.scrollToClienteId) return;
+
+    const el = document.getElementById(
+      `cliente-${location.state.scrollToClienteId}`
+    );
+
+    if (el) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+      el.classList.add("ring-2", "ring-blue-500");
+
+      setTimeout(() => {
+        el.classList.remove("ring-2", "ring-blue-500");
+      }, 2000);
+    }
+  }, [location.state, clientes]);
 
   const clientesFiltrados = clientes.filter((cliente) => {
     const texto = search.toLowerCase();
@@ -43,7 +65,6 @@ const ClientesPage = () => {
       );
 
       await reLoadClientes();
-
       setEditandoInstalacionId(null);
       setNuevaFecha("");
     } catch (error) {
@@ -60,28 +81,32 @@ const ClientesPage = () => {
       <div className="relative w-full">
         <Search
           size={16}
-          className="absolute left-3 top-1/2 -translate-y-1/2
-               text-gray-400 dark:text-gray-500"
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
         />
-
         <input
           type="text"
           placeholder="Buscar cliente por nombre, teléfono, email o dirección..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full border rounded pl-9 pr-3 py-2 text-sm
-               bg-white dark:bg-slate-800
-               text-gray-800 dark:text-gray-200
-               focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="
+            w-full border rounded pl-9 pr-3 py-2 text-sm
+            bg-white dark:bg-slate-800
+            text-gray-800 dark:text-gray-200
+            focus:outline-none focus:ring-2 focus:ring-blue-500
+          "
         />
       </div>
 
-      {/* LISTADO */}
+      {/* LISTADO DE CLIENTES */}
       <div className="space-y-6">
         {clientesFiltrados.map((cliente) => (
           <div
             key={cliente.id}
-            className="rounded-lg border bg-white dark:bg-slate-800 shadow p-4"
+            id={`cliente-${cliente.id}`}
+            className="
+              rounded-lg border bg-white dark:bg-slate-800
+              shadow p-4 transition
+            "
           >
             {/* CLIENTE */}
             <div className="flex flex-col sm:flex-row sm:justify-between gap-2 mb-4">
@@ -90,19 +115,19 @@ const ClientesPage = () => {
                   <h2 className="text-xl font-semibold text-blue-700 dark:text-blue-400">
                     {cliente.nombre}
                   </h2>
-                  <div className="flex items-end gap-2">
+
+                  <div className="flex gap-2">
                     <button
                       onClick={() =>
                         navigate(`/instalaciones/nueva/${cliente.id}`)
                       }
-                      className="m-auto"
                       title="Agregar instalación"
                     >
                       <PlusCircle className="h-5 w-5 text-blue-600 hover:text-blue-700" />
                     </button>
+
                     <button
                       onClick={() => navigate(`/lugares/editar/${cliente.id}`)}
-                      className="m-auto"
                       title="Editar lugar"
                     >
                       <Pencil className="h-5 w-5 text-blue-600 hover:text-blue-700" />
@@ -214,10 +239,12 @@ const ClientesPage = () => {
                         )}
                       </div>
 
-                      {/* VER / OCULTAR MANTENIMIENTOS */}
+                      {/* MANTENIMIENTOS */}
                       <button
                         onClick={() =>
-                          setInstalacionExpandida(expandida ? null : inst.id)
+                          setInstalacionExpandida(
+                            expandida ? null : inst.id
+                          )
                         }
                         className="mt-3 text-xs text-blue-600 hover:underline"
                       >
@@ -226,7 +253,6 @@ const ClientesPage = () => {
                           : "Ver mantenimientos"}
                       </button>
 
-                      {/* MANTENIMIENTOS */}
                       {expandida && (
                         <div className="mt-3 space-y-2">
                           {inst.mantenimientos?.length > 0 ? (
@@ -262,6 +288,7 @@ const ClientesPage = () => {
           </div>
         ))}
       </div>
+
       <BottomNavbar />
     </div>
   );

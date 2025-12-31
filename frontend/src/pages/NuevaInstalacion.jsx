@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useMemo } from "react";
 import { postData } from "../utils/api";
-import { ArrowLeft, Wrench, Calendar, Repeat } from "lucide-react";
+import { ArrowLeft, Wrench, Calendar, Repeat, PlusCircle } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 
 export default function NuevaInstalacion() {
@@ -71,8 +71,8 @@ export default function NuevaInstalacion() {
           <button onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
           </button>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Nueva instalación
+          <h1 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+           <PlusCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" /> Nueva instalación
           </h1>
         </div>
 

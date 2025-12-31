@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, PlusCircle } from "lucide-react";
 import AddLugarForm from "../components/AddLugarForm";
 
 export default function NuevoLugarPage() {
@@ -16,8 +16,8 @@ export default function NuevoLugarPage() {
         >
           <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
         </button>
-        <h1 className="ml-3 text-lg font-semibold text-gray-900 dark:text-white">
-          Nueva instalación
+        <h1 className="flex items-center ml-3 text-lg font-semibold text-gray-900 dark:text-white">
+          <PlusCircle className="me-2 h-5 w-5 text-blue-600 dark:text-blue-400" /> Nueva instalación 
         </h1>
       </header>
 

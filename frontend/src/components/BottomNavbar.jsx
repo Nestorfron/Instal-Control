@@ -1,4 +1,6 @@
 import React from "react";
+import GlobalSearch from "./GlobalSearch";
+import { useState } from "react";
 import {
   Home,
   Building2,
@@ -14,6 +16,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 const BottomNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showSearch, setShowSearch] = useState(false);
+
 
   const items = [
     { icon: Home, path: "/home" },
@@ -26,15 +30,16 @@ const BottomNavbar = () => {
   const centerActions = {
     "/home": {
       icon: Search,
-      action: () => console.log("Buscar"),
+      action: () => setShowSearch(true),
     },
+
     "/clientes": {
       icon: Plus,
-      action: () => navigate("/clientes/nuevo"),
+      action: () => navigate("/lugares/nuevo"),
     },
     "/pendientes": {
       icon: CheckCircle,
-      action: () => console.log("Resolver pendientes"),
+      action: () => navigate("/mantenimientos/nuevo"),
     },
     "/perfil": {
       icon: Settings,
@@ -105,6 +110,7 @@ const BottomNavbar = () => {
           </button>
         )}
       </div>
+      {showSearch && <GlobalSearch onClose={() => setShowSearch(false)} />}
     </nav>
   );
 };

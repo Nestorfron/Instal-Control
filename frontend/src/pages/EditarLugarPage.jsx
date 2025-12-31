@@ -1,15 +1,12 @@
-import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import AddLugarForm from "../components/AddLugarForm";
 import { useAppContext } from "../context/AppContext";
-
+import EditClienteForm from "../components/EditClienteForm";
 
 export default function EditarLugarPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { clientes } = useAppContext();
-
 
   const cliente = clientes.find((c) => String(c.id) === String(id));
 
@@ -31,9 +28,16 @@ export default function EditarLugarPage() {
 
       {/* FORMULARIO */}
       <main className="flex-1 overflow-auto p-4">
-        {cliente &&
-          <AddLugarForm lugar={cliente} modo="edit" />
-          }
+        {cliente ? (
+          <EditClienteForm
+            cliente={cliente}
+            onSuccess={() => navigate(-1)}
+          />
+        ) : (
+          <p className="text-center text-sm text-gray-500">
+            Cargando cliente...
+          </p>
+        )}
       </main>
     </div>
   );
