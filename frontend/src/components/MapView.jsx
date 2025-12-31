@@ -69,7 +69,7 @@ export default function MapView({ lugares }) {
       <MapContainer
         center={position}
         zoom={14}
-        className="h-[60vh] md:h-80 w-full rounded-2xl"
+        className="h-[50vh] md:h-80 w-full rounded-2xl"
         whenCreated={(map) => {
           map.on("dragstart", () => setIsFollowing(false));
           map.on("zoomstart", () => setIsFollowing(false));

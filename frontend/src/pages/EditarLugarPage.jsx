@@ -1,10 +1,17 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import AddLugarForm from "../components/AddLugarForm";
+import { useAppContext } from "../context/AppContext";
 
-export default function NuevoLugarPage() {
+
+export default function EditarLugarPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const { clientes } = useAppContext();
+
+
+  const cliente = clientes.find((c) => String(c.id) === String(id));
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex flex-col">
@@ -16,14 +23,17 @@ export default function NuevoLugarPage() {
         >
           <ArrowLeft className="h-5 w-5 text-gray-700 dark:text-gray-300" />
         </button>
+
         <h1 className="ml-3 text-lg font-semibold text-gray-900 dark:text-white">
-          Nueva instalación
+          Editar Lugar
         </h1>
       </header>
 
       {/* FORMULARIO */}
       <main className="flex-1 overflow-auto p-4">
-        <AddLugarForm />
+        {cliente &&
+          <AddLugarForm lugar={cliente} modo="edit" />
+          }
       </main>
     </div>
   );

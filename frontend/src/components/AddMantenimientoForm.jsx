@@ -12,9 +12,6 @@ const AddMantenimientoForm = () => {
     reLoadClientes,
   } = useAppContext();
 
-
-  console.log(usuario)
-
   const [clienteId, setClienteId] = useState("");
   const [instalacionId, setInstalacionId] = useState("");
   const [fecha, setFecha] = useState(

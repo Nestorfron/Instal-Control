@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { putData } from "../utils/api";
-import { Search, PlusCircle } from "lucide-react";
+import { Search, PlusCircle, Pencil } from "lucide-react";
 import BottomNavbar from "../components/BottomNavbar";
 
 const ClientesPage = () => {
@@ -86,19 +86,28 @@ const ClientesPage = () => {
             {/* CLIENTE */}
             <div className="flex flex-col sm:flex-row sm:justify-between gap-2 mb-4">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex justify-between gap-2">
                   <h2 className="text-xl font-semibold text-blue-700 dark:text-blue-400">
                     {cliente.nombre}
                   </h2>
-                  <button
-                    onClick={() =>
-                      navigate(`/instalaciones/nueva/${cliente.id}`)
-                    }
-                    className="ms-auto"
-                    title="Agregar instalación"
-                  >
-                    <PlusCircle className="h-5 w-5 text-blue-600 hover:text-blue-700" />
-                  </button>
+                  <div className="flex items-end gap-2">
+                    <button
+                      onClick={() =>
+                        navigate(`/instalaciones/nueva/${cliente.id}`)
+                      }
+                      className="m-auto"
+                      title="Agregar instalación"
+                    >
+                      <PlusCircle className="h-5 w-5 text-blue-600 hover:text-blue-700" />
+                    </button>
+                    <button
+                      onClick={() => navigate(`/lugares/editar/${cliente.id}`)}
+                      className="m-auto"
+                      title="Editar lugar"
+                    >
+                      <Pencil className="h-5 w-5 text-blue-600 hover:text-blue-700" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="text-sm text-gray-600 dark:text-gray-400">

@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import MapSelector from "./MapSelector";
 import { useAppContext } from "../context/AppContext";
-import { postData } from "../utils/api";
+import { postData, putData } from "../utils/api";
 
-export default function AddLugarForm({ clientes = [] }) {
+export default function AddLugarForm({
+  clientes = [],
+  lugar = null,
+  modo = "create",
+}) {
   const { usuario, token, reLoadClientes } = useAppContext();
+  const isEdit = modo === "edit";
 
-  // Fecha de hoy en formato YYYY-MM-DD
   const hoy = new Date().toISOString().split("T")[0];
 
   const [form, setForm] = useState({
-    empresa_id: "",
     nombre: "",
     telefono: "",
     email: "",
@@ -19,42 +22,75 @@ export default function AddLugarForm({ clientes = [] }) {
     tipo_sistema: "",
     fecha_instalacion: hoy,
     frecuencia_meses: "",
-    proximo_mantenimiento: "", 
+    proximo_mantenimiento: "",
   });
-
 
   const [position, setPosition] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  /* ===============================
+     PRECARGAR DATOS (EDITAR)
+  =============================== */
+  useEffect(() => {
+    if (isEdit && lugar) {
+      setForm({
+        nombre: lugar.nombre || "",
+        telefono: lugar.telefono || "",
+        email: lugar.email || "",
+        direccion: lugar.direccion || "",
+        observaciones: lugar.observaciones || "",
+        tipo_sistema: lugar.instalacion?.tipo_sistema || "",
+        fecha_instalacion: lugar.instalacion?.fecha_instalacion || hoy,
+        frecuencia_meses: lugar.instalacion?.frecuencia_meses || "",
+        proximo_mantenimiento:
+          lugar.instalacion?.proximo_mantenimiento || "",
+      });
 
+      if (lugar.lat && lugar.lng) {
+        setPosition([lugar.lat, lugar.lng]);
+      }
+    }
+  }, [isEdit, lugar, hoy]);
 
+  /* ===============================
+     CALCULAR PRÓXIMO MANTENIMIENTO
+  =============================== */
   useEffect(() => {
     if (!form.fecha_instalacion || !form.frecuencia_meses) return;
 
     const fecha = new Date(form.fecha_instalacion);
     fecha.setMonth(fecha.getMonth() + Number(form.frecuencia_meses));
+
     setForm((prev) => ({
       ...prev,
       proximo_mantenimiento: fecha.toISOString().split("T")[0],
     }));
-  }, [ form.fecha_instalacion, form.frecuencia_meses ]);
+  }, [form.fecha_instalacion, form.frecuencia_meses]);
 
-  // Obtener posición inicial del usuario
+  /* ===============================
+     GEOLOCALIZACIÓN (SOLO CREATE)
+  =============================== */
   useEffect(() => {
+    if (isEdit) return;
+
     navigator.geolocation.getCurrentPosition(
       (pos) => setPosition([pos.coords.latitude, pos.coords.longitude]),
-      (err) => console.error("Error obteniendo ubicación:", err),
+      (err) => console.error("Error obteniendo ubicación", err),
       { enableHighAccuracy: true }
     );
-  }, []);
+  }, [isEdit]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  /* ===============================
+     SUBMIT
+  =============================== */
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!position) {
       setMessage("Debes seleccionar la ubicación en el mapa");
       return;
@@ -64,8 +100,7 @@ export default function AddLugarForm({ clientes = [] }) {
     setMessage("");
 
     try {
-      // Crear cliente
-      const clienteData = {
+      const clientePayload = {
         empresa_id: usuario.empresa_id,
         nombre: form.nombre,
         telefono: form.telefono,
@@ -75,37 +110,44 @@ export default function AddLugarForm({ clientes = [] }) {
         lat: position[0],
         lng: position[1],
       };
-      const clienteRes = await postData("/clientes", clienteData, token);
-      if (!clienteRes?.cliente) throw new Error("Error creando cliente");
 
-      // Crear instalación si hay datos
-      if (form.tipo_sistema && form.fecha_instalacion) {
-        const instalacionData = {
-          empresa_id: usuario.empresa_id,
-          cliente_id: clienteRes.cliente.id,
-          instalador_id: usuario.id,
-          tipo_sistema: form.tipo_sistema,
-          fecha_instalacion: form.fecha_instalacion,
-          frecuencia_meses: form.frecuencia_meses,
-          proximo_mantenimiento: form.proximo_mantenimiento || null,
-        };
-        await postData("/instalaciones", instalacionData, token);
+      if (isEdit) {
+        await putData(`/clientes/${lugar.id}`, clientePayload, token);
+      } else {
+        const clienteRes = await postData(
+          "/clientes",
+          clientePayload,
+          token
+        );
+
+        if (!clienteRes?.cliente) {
+          throw new Error("Error creando cliente");
+        }
+
+        if (form.tipo_sistema && form.fecha_instalacion) {
+          await postData(
+            "/instalaciones",
+            {
+              empresa_id: usuario.empresa_id,
+              cliente_id: clienteRes.cliente.id,
+              instalador_id: usuario.id,
+              tipo_sistema: form.tipo_sistema,
+              fecha_instalacion: form.fecha_instalacion,
+              frecuencia_meses: form.frecuencia_meses,
+              proximo_mantenimiento:
+                form.proximo_mantenimiento || null,
+            },
+            token
+          );
+        }
       }
 
-      setMessage("Lugar agregado correctamente");
+      setMessage(
+        isEdit
+          ? "Lugar actualizado correctamente"
+          : "Lugar agregado correctamente"
+      );
       reLoadClientes();
-      setForm({
-        nombre: "",
-        telefono: "",
-        email: "",
-        direccion: "",
-        observaciones: "",
-        tipo_sistema: "",
-        fecha_instalacion: hoy,
-        frecuencia_meses: 6,
-        proximo_mantenimiento: "",
-      });
-      setPosition(null);
     } catch (err) {
       console.error(err);
       setMessage("Ocurrió un error al guardar");
@@ -124,6 +166,7 @@ export default function AddLugarForm({ clientes = [] }) {
         className="w-full border rounded px-2 py-1 dark:bg-slate-700"
         required
       />
+
       <input
         name="telefono"
         value={form.telefono}
@@ -131,6 +174,7 @@ export default function AddLugarForm({ clientes = [] }) {
         placeholder="Teléfono"
         className="w-full border rounded px-2 py-1 dark:bg-slate-700"
       />
+
       <input
         name="email"
         value={form.email}
@@ -138,6 +182,7 @@ export default function AddLugarForm({ clientes = [] }) {
         placeholder="Email"
         className="w-full border rounded px-2 py-1 dark:bg-slate-700"
       />
+
       <input
         name="direccion"
         value={form.direccion}
@@ -145,6 +190,7 @@ export default function AddLugarForm({ clientes = [] }) {
         placeholder="Dirección"
         className="w-full border rounded px-2 py-1 dark:bg-slate-700"
       />
+
       <textarea
         name="observaciones"
         value={form.observaciones}
@@ -152,21 +198,23 @@ export default function AddLugarForm({ clientes = [] }) {
         placeholder="Observaciones"
         className="w-full border rounded px-2 py-1 dark:bg-slate-700"
       />
+
       <input
         name="tipo_sistema"
         value={form.tipo_sistema}
         onChange={handleChange}
-        placeholder="Tipo de sistema (opcional)"
+        placeholder="Tipo de sistema"
         className="w-full border rounded px-2 py-1 dark:bg-slate-700"
       />
-      <div className="flex items-center justify-between">
-        <p>Fecha inst.</p>
+
+      <div className="flex items-center gap-3">
+        <span className="text-sm">Fecha inst.</span>
         <input
           type="date"
           name="fecha_instalacion"
           value={form.fecha_instalacion}
           onChange={handleChange}
-          className="w-full border rounded px-2 py-1 dark:bg-slate-700"
+          className="flex-1 border rounded px-2 py-1 dark:bg-slate-700"
         />
       </div>
 
@@ -175,19 +223,18 @@ export default function AddLugarForm({ clientes = [] }) {
         name="frecuencia_meses"
         value={form.frecuencia_meses}
         onChange={handleChange}
-        placeholder="Mantenimientos en meses"
+        placeholder="Frecuencia (meses)"
         className="w-full border rounded px-2 py-1 dark:bg-slate-700"
         min={1}
       />
 
-      <div className="flex items-center justify-between">
-        <p>Prox. Mant.</p>
+      <div className="flex items-center gap-3">
+        <span className="text-sm">Próx. Mant.</span>
         <input
           type="date"
-          name="proximo_mantenimiento"
           value={form.proximo_mantenimiento}
           readOnly
-          className="w-full border rounded px-2 py-1 bg-gray-100 dark:bg-slate-600"
+          className="flex-1 border rounded px-2 py-1 bg-gray-100 dark:bg-slate-600"
         />
       </div>
 
@@ -199,13 +246,43 @@ export default function AddLugarForm({ clientes = [] }) {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white rounded py-3 shadow"
         disabled={loading}
+        className={`w-full text-white rounded py-3 shadow transition ${
+          isEdit ? "bg-emerald-600" : "bg-blue-600"
+        }`}
       >
-        {loading ? "Guardando..." : "Agregar lugar"}
+        {loading
+          ? "Guardando..."
+          : isEdit
+          ? "Guardar cambios"
+          : "Agregar lugar"}
       </button>
-      
+
+      {message && (
+  <div
+    className="
+      flex items-center gap-2
+      rounded-xl px-4 py-2
+      bg-blue-50 dark:bg-slate-800
+      border border-blue-200 dark:border-slate-700
+      text-sm
+      text-blue-700 dark:text-slate-200
+      shadow-sm
+      animate-in fade-in slide-in-from-top-2
+    "
+  >
+    <svg
+      className="h-4 w-4 flex-shrink-0"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+    >
+      <path d="M9 12h2V8H9v4zm0 4h2v-2H9v2zm1-14C4.935 2 2 4.935 2 8s2.935 6 7 6 7-2.935 7-6-2.935-6-7-6z" />
+    </svg>
+
+    <span>{message}</span>
+  </div>
+)}
+
     </form>
-    
   );
 }
