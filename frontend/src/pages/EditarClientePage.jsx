@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import EditClienteForm from "../components/EditClienteForm";
 
-export default function EditarLugarPage() {
+export default function EditarClientePage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { clientes } = useAppContext();
@@ -22,7 +22,7 @@ export default function EditarLugarPage() {
         </button>
 
         <h1 className="ml-3 text-lg font-semibold text-gray-900 dark:text-white">
-          Editar Lugar
+          Editar Cliente
         </h1>
       </header>
 

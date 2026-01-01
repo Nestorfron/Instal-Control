@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { loginUser, postData } from "../utils/api";
 import { useNavigate } from "react-router-dom";
-import { Building2, Lock, Mail, User } from "lucide-react";
+import { Lock, Mail, User } from "lucide-react";
 import { useAppContext } from "../context/AppContext";
 import Logo from "../assets/logo.png";
 import Logo2 from "../assets/logo-2.png";
@@ -30,7 +30,6 @@ const LoginSetup = () => {
     setLoading(true);
 
     try {
-      // Si estamos en modo setup, creamos el admin
       if (modoSetup) {
         await postData("/auth/setup", {
           name: form.nombre,
@@ -39,18 +38,15 @@ const LoginSetup = () => {
         });
       }
 
-      // Login
       const data = await loginUser(form.correo, form.password);
 
-
-      // Guardar token y usuario en AppContext
       setToken(data.access_token || data.token);
       setUsuario(data.usuario || null);
 
-      // Opcional: guardar en localStorage para persistencia
       localStorage.setItem("token", data.access_token || data.token);
-      if (data.usuario)
+      if (data.usuario) {
         localStorage.setItem("usuario", JSON.stringify(data.usuario));
+      }
 
       navigate("/home");
     } catch (err) {
@@ -61,15 +57,33 @@ const LoginSetup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-slate-700">
+    <div
+      className="
+        min-h-[100dvh]
+        bg-gray-50 dark:bg-slate-900
+        flex items-center justify-center
+        px-4
+        overflow-x-hidden
+      "
+    >
+      <div
+        className="
+          w-full max-w-sm
+          bg-white dark:bg-slate-800
+          rounded-2xl
+          p-6
+          shadow-sm
+          border border-gray-200 dark:border-slate-700
+        "
+      >
         {/* Header */}
-        <div className="flex flex-col items-center mb-6">
-          <div className="flex items-center gap-6">
-            <img src={Logo} alt="Logo" className="h-16 w-16 mb-4" />
-            <img src={Logo2} alt="Logo secundario" className="h-16 w-16 mb-4" />
+        <div className="flex flex-col items-center mb-5">
+          <div className="flex items-center gap-4 mb-2">
+            <img src={Logo} alt="Logo" className="h-14 w-14" />
+            <img src={Logo2} alt="Logo secundario" className="h-14 w-14" />
           </div>
-          <h1 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">
+
+          <h1 className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">
             {modoSetup ? "Crear administrador" : "Iniciar sesión"}
           </h1>
         </div>
@@ -89,7 +103,7 @@ const LoginSetup = () => {
             icon={Mail}
             name="correo"
             type="text"
-            placeholder="Correo/Usuario"
+            placeholder="Correo / Usuario"
             value={form.correo}
             onChange={handleChange}
           />
@@ -104,15 +118,20 @@ const LoginSetup = () => {
           />
 
           {error && (
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {error}
+            </p>
           )}
 
           <button
             type="submit"
             disabled={loading}
             className="
-              w-full rounded-xl bg-blue-600 text-white py-2 font-medium
-              transition active:scale-95 disabled:opacity-60
+              w-full rounded-xl
+              bg-blue-600 text-white
+              py-2 font-medium
+              transition active:scale-95
+              disabled:opacity-60
             "
           >
             {loading
@@ -141,10 +160,26 @@ const LoginSetup = () => {
 };
 
 const Input = ({ icon: Icon, ...props }) => (
-  <div className="flex items-center gap-2 border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-2 bg-white dark:bg-slate-900">
-    <Icon className="h-4 w-4 text-gray-400" />
+  <div
+    className="
+      flex items-center gap-2
+      border border-gray-200 dark:border-slate-700
+      rounded-xl
+      px-3 py-2
+      bg-white dark:bg-slate-900
+      box-border
+    "
+  >
+    <Icon className="h-4 w-4 text-gray-400 shrink-0" />
     <input
-      className="w-full bg-transparent outline-none text-sm text-gray-900 dark:text-white"
+      className="
+        w-full
+        bg-transparent
+        outline-none
+        text-sm
+        text-gray-900 dark:text-white
+        box-border
+      "
       {...props}
     />
   </div>

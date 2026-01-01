@@ -127,8 +127,8 @@ const ClientesPage = () => {
                     </button>
 
                     <button
-                      onClick={() => navigate(`/lugares/editar/${cliente.id}`)}
-                      title="Editar lugar"
+                      onClick={() => navigate(`/cliente/editar/${cliente.id}`)}
+                      title="Editar Cliente"
                     >
                       <Pencil className="h-5 w-5 text-blue-600 hover:text-blue-700" />
                     </button>
@@ -175,10 +175,22 @@ const ClientesPage = () => {
                     >
                       <div className="flex justify-between flex-wrap gap-2">
                         <p className="font-medium">🛠 {inst.tipo_sistema}</p>
-                        <span className="text-xs text-gray-500">
-                          Instalado: {inst.fecha_instalacion}
-                        </span>
+
+                        <button
+                          onClick={() =>
+                            navigate(`/instalaciones/${inst.id}/editar`, {
+                              state: inst,
+                            })
+                          }
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          Editar Inst.
+                        </button>
                       </div>
+
+                      <span className="text-xs text-gray-500">
+                        Instalado: {inst.fecha_instalacion}
+                      </span>
 
                       <p className="text-sm text-gray-600 dark:text-gray-300">
                         🔁 Cada {inst.frecuencia_meses} meses
@@ -242,9 +254,7 @@ const ClientesPage = () => {
                       {/* MANTENIMIENTOS */}
                       <button
                         onClick={() =>
-                          setInstalacionExpandida(
-                            expandida ? null : inst.id
-                          )
+                          setInstalacionExpandida(expandida ? null : inst.id)
                         }
                         className="mt-3 text-xs text-blue-600 hover:underline"
                       >

@@ -6,11 +6,12 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Perfil from "./pages/Perfil";
 import NuevoLugarPage from "./pages/NuevoLugarPage";
-import EditarLugarPage from "./pages/EditarLugarPage";
+import EditarClientePage from "./pages/EditarClientePage";
 import ClientesPage from "./pages/Clientes";
 import NuevoMantenimientoPage from "./pages/NuevoMantenimientoPage";
 import Pendientes from "./pages/Pendientes";
 import NuevaInstalacion from "./pages/NuevaInstalacion";
+import EditarInstalacion from "./pages/EditarInstalacion";
 
 
 function App() {
@@ -44,11 +45,12 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="/lugares/nuevo" element={<NuevoLugarPage />} />
-          <Route path="/lugares/editar/:id" element={<EditarLugarPage />} />
+          <Route path="/cliente/editar/:id" element={<EditarClientePage />} />
           <Route path="/clientes" element={<ClientesPage />} />
           <Route path="/mantenimientos/nuevo" element={<NuevoMantenimientoPage />} />
           <Route path="/pendientes" element={<Pendientes />} />
           <Route path="/instalaciones/nueva/:clienteId" element={<NuevaInstalacion />} />
+          <Route path="/instalaciones/:id/editar" element={<EditarInstalacion />} />
         </Routes>
       </BrowserRouter>
 
