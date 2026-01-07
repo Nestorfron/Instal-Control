@@ -8,6 +8,7 @@ export const AppProvider = ({ children }) => {
   const [token, setToken] = useState(null);  
   const [clientes, setClientes] = useState([]);
   const [instalaciones, setInstalaciones] = useState([]);
+  const [pendientes, setPendientes] = useState([]);
 
   
   useEffect(() => {
@@ -15,6 +16,7 @@ export const AppProvider = ({ children }) => {
       try {
         const res = await fetchData("/clientes");
         setClientes(res.clientes);
+        console.log("Clientes cargados:", res.clientes);
       } catch (err) {
         console.error("Error cargando usuario:", err);
       }
@@ -23,12 +25,23 @@ export const AppProvider = ({ children }) => {
       try {
         const res = await fetchData("/instalaciones");
         setInstalaciones(res.instalaciones);
+        console.log("Instalaciones cargadas:", res.instalaciones);
+      } catch (err) {
+        console.error("Error cargando usuario:", err);
+      }
+    };
+    const loadPendientes = async () => {
+      try {
+        const res = await fetchData("/pendientes");
+        setPendientes(res.pendientes);
+        console.log("Pendientes cargadas:", res.pendientes);
       } catch (err) {
         console.error("Error cargando usuario:", err);
       }
     };
     loadClientes();
     loadInstalaciones();
+    loadPendientes();
   }, []);
 
 
@@ -50,6 +63,15 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const reLoadPendientes = async () => {
+    try {
+      const res = await fetchData("/pendientes");
+      setPendientes(res.pendientes);
+    } catch (err) {
+      console.error("Error cargando usuario:", err);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -63,6 +85,9 @@ export const AppProvider = ({ children }) => {
         instalaciones,
         setInstalaciones,
         reLoadInstalaciones,
+        pendientes,
+        setPendientes,
+        reLoadPendientes,
       }}
     >
       {children}

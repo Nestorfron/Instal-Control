@@ -48,6 +48,8 @@ class Empresa(db.Model):
         cascade="all, delete-orphan",
     )
 
+    pendientes = db.relationship("Pendiente", back_populates="empresa", lazy="selectin", cascade="all, delete-orphan")
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -137,6 +139,8 @@ class Cliente(db.Model):
         cascade="all, delete-orphan",
     )
 
+    pendientes = db.relationship("Pendiente", back_populates="cliente", lazy="selectin", cascade="all, delete-orphan")
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -150,6 +154,7 @@ class Cliente(db.Model):
             "observaciones": self.observaciones,
             "activo": self.activo,
             "instalaciones": [i.to_dict() for i in self.instalaciones],
+            "pendientes": [p.to_dict() for p in self.pendientes],
         }
 
 
@@ -188,6 +193,8 @@ class Instalacion(db.Model):
         cascade="all, delete-orphan",
     )
 
+    pendientes = db.relationship("Pendiente", back_populates="instalacion", lazy="selectin", cascade="all, delete-orphan")
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -204,6 +211,7 @@ class Instalacion(db.Model):
             ),
             "activa": self.activa,
             "mantenimientos": [m.to_dict() for m in self.mantenimientos],
+            "pendientes": [p.to_dict() for p in self.pendientes],
         }
 
 
@@ -241,7 +249,38 @@ class Mantenimiento(db.Model):
             "fecha": self.fecha.isoformat(),
             "notas": self.notas,
         }
+    
+# =========================
+# PENDIENTES
+# =========================
 
+class Pendiente(db.Model):
+    __tablename__ = "pendientes"
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=False)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False)
+    fecha = db.Column(db.Date, nullable=False)
+    notas = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+
+    # RELACIONES
+    empresa = db.relationship("Empresa", back_populates="pendientes")
+
+    cliente = db.relationship("Cliente", back_populates="pendientes")
+
+    instalacion = db.relationship("Instalacion", back_populates="pendientes")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "empresa_id": self.empresa_id,
+            "cliente_id": self.cliente_id,
+            "instalacion_id": self.instalacion_id,
+            "fecha": self.fecha.isoformat(),
+            "notas": self.notas,
+        }
 
 # =========================
 # INDICES
@@ -251,3 +290,6 @@ db.Index("idx_cliente_empresa", Cliente.empresa_id)
 db.Index("idx_instalacion_empresa", Instalacion.empresa_id)
 db.Index("idx_mantenimiento_empresa", Mantenimiento.empresa_id)
 db.Index("idx_mantenimiento_instalacion", Mantenimiento.instalacion_id)
+db.Index("idx_pendiente_empresa", Pendiente.empresa_id)
+db.Index("idx_pendiente_cliente", Pendiente.cliente_id)
+db.Index("idx_pendiente_instalacion", Pendiente.instalacion_id)

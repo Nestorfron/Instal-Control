@@ -9,7 +9,7 @@ import BottomNavbar from "../components/BottomNavbar";
 
 const Home = () => {
   const navigate = useNavigate();
-  const { clientes, instalaciones } = useAppContext();
+  const { clientes, instalaciones, pendientes } = useAppContext();
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -29,6 +29,8 @@ const Home = () => {
     const fecha = new Date(inst.proximo_mantenimiento);
     return inst.activa && fecha >= hoy && fecha <= limite;
   });
+
+  const totalPendientes = instalacionesPendientes.length + pendientes.length;
 
   return (
     <div
@@ -169,7 +171,7 @@ const Home = () => {
           <SummaryCard
             icon={Wrench}
             label="Pendientes"
-            value={instalacionesPendientes.length}
+            value={totalPendientes}
             color="text-orange-600"
           />
         </button>

@@ -1,22 +1,24 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Wrench } from "lucide-react";
-import AddMantenimientoForm from "../components/AddMantenimientoForm";
+import { ArrowLeft, ClipboardList } from "lucide-react";
+import AddPendienteForm from "../components/AddPendienteForm";
 
-export default function NuevoPendientePage() {
+export default function NuevoPendienteTrabajoPage() {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex flex-col">
       {/* HEADER */}
-      <header className="
-        sticky top-0 z-10
-        flex items-center gap-3
-        px-4 py-3
-        bg-white dark:bg-slate-800
-        border-b border-gray-200 dark:border-slate-700
-        shadow-sm
-      ">
+      <header
+        className="
+          sticky top-0 z-10
+          flex items-center gap-3
+          px-4 py-3
+          bg-white dark:bg-slate-800
+          border-b border-gray-200 dark:border-slate-700
+          shadow-sm
+        "
+      >
         <button
           onClick={() => navigate(-1)}
           className="
@@ -30,16 +32,16 @@ export default function NuevoPendientePage() {
         </button>
 
         <div className="flex items-center gap-2">
-          <Wrench className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <ClipboardList className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Nuevo mantenimiento
+            Nuevo pendiente
           </h1>
         </div>
       </header>
 
       {/* FORMULARIO */}
       <main className="flex-1 overflow-auto p-4">
-        <AddMantenimientoForm />
+        <AddPendienteForm />
       </main>
     </div>
   );

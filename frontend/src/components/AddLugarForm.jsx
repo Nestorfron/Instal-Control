@@ -106,6 +106,7 @@ export default function AddLugarForm({ clientes = [] }) {
         proximo_mantenimiento: "",
       });
       setPosition(null);
+      navigate("/clientes");
     } catch (err) {
       console.error(err);
       setMessage("Ocurrió un error al guardar");

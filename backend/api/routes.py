@@ -14,6 +14,7 @@ from api.models import (
     Cliente,
     Instalacion,
     Mantenimiento,
+    Pendiente,
 )
 
 api = Blueprint("api", __name__)
@@ -400,6 +401,68 @@ def delete_mantenimiento(id):
 def get_mantenimientos():
     mantenimientos = Mantenimiento.query.all()    
     return jsonify({"mantenimientos": [m.to_dict() for m in mantenimientos]})
+
+# ======================    
+# PENDIENTES
+# ======================
+@api.route("/pendientes", methods=["GET"])
+def get_pendientes():
+    pendientes = Pendiente.query.all()
+    return jsonify({"pendientes": [p.to_dict() for p in pendientes]})
+
+@api.route("/pendientes", methods=["POST"])
+@jwt_required()
+def create_pendiente():
+    data = request.get_json(silent=True)
+
+    pendiente = Pendiente(
+        empresa_id=data["empresa_id"],
+        cliente_id=data["cliente_id"],
+        instalacion_id=data["instalacion_id"],
+        fecha=data["fecha"],
+        notas=data.get("notas"),
+    )
+
+    db.session.add(pendiente)
+    db.session.commit()
+    return jsonify({"pendiente": pendiente.to_dict()}), 201
+
+@api.route("/pendientes/<int:id>", methods=["PUT"])
+@jwt_required()
+def update_pendiente(id):
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+    
+    pendiente = Pendiente.query.get(id)
+    if not pendiente:
+        return jsonify({"message": "Pendiente no encontrado"}), 404
+    
+    empresa_id = data.get("empresa_id")
+    cliente_id = data.get("cliente_id")
+    instalacion_id = data.get("instalacion_id")
+    fecha = data.get("fecha")
+    notas = data.get("notas")
+
+    if empresa_id: pendiente.empresa_id = empresa_id
+    if cliente_id: pendiente.cliente_id = cliente_id
+    if instalacion_id: pendiente.instalacion_id = instalacion_id
+    if fecha: pendiente.fecha = fecha
+    if notas: pendiente.notas = notas
+    
+    db.session.commit()    
+    return jsonify({"pendiente": pendiente.to_dict()}), 200
+
+@api.route("/pendientes/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_pendiente(id):
+    pendiente = Pendiente.query.get(id)
+    if not pendiente:
+        return jsonify({"message": "Pendiente no encontrado"}), 404
+    
+    db.session.delete(pendiente)
+    db.session.commit()
+    return jsonify({"message": "Pendiente eliminado"}), 200
 
 # ======================
 # CHANGE PASSWORD

@@ -12,6 +12,7 @@ import NuevoMantenimientoPage from "./pages/NuevoMantenimientoPage";
 import Pendientes from "./pages/Pendientes";
 import NuevaInstalacion from "./pages/NuevaInstalacion";
 import EditarInstalacion from "./pages/EditarInstalacion";
+import NuevoPendientePage from "./pages/NuevoPendientePage";
 
 
 function App() {
@@ -49,6 +50,7 @@ function App() {
           <Route path="/clientes" element={<ClientesPage />} />
           <Route path="/mantenimientos/nuevo" element={<NuevoMantenimientoPage />} />
           <Route path="/pendientes" element={<Pendientes />} />
+          <Route path="/pendientes/nuevo" element={<NuevoPendientePage />} />          
           <Route path="/instalaciones/nueva/:clienteId" element={<NuevaInstalacion />} />
           <Route path="/instalaciones/:id/editar" element={<EditarInstalacion />} />
         </Routes>
