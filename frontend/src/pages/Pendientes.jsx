@@ -15,7 +15,7 @@ const Pendientes = () => {
   const [mantenimientos, setMantenimientos] = useState([]);
 
   /* ======================
-     FECHAS NORMALIZADAS
+     FECHAS BASE
   ====================== */
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
@@ -24,10 +24,13 @@ const Pendientes = () => {
   limite.setDate(hoy.getDate() + DIAS_ADELANTE);
   limite.setHours(23, 59, 59, 999);
 
-  const esHoy = (fecha) => {
+  const getEstadoFecha = (fecha) => {
     const f = new Date(fecha);
     f.setHours(0, 0, 0, 0);
-    return f.getTime() === hoy.getTime();
+
+    if (f < hoy) return "pasado";
+    if (f.getTime() === hoy.getTime()) return "hoy";
+    return "futuro";
   };
 
   /* ======================
@@ -48,16 +51,20 @@ const Pendientes = () => {
   useEffect(() => {
     const data = pendientes
       .filter((p) => p.fecha)
-      .map((p) => ({
-        ...p,
-        cliente: clientesPorId[p.cliente_id],
-        tipo: "servicio",
-        esHoy: esHoy(p.fecha),
-      }))
-      .filter((p) => {
+      .map((p) => {
         const f = new Date(p.fecha);
-        return f >= hoy && f <= limite;
+
+        // mostrar pasados + hoy + futuros hasta 30 días
+        if (f > limite) return null;
+
+        return {
+          ...p,
+          cliente: clientesPorId[p.cliente_id],
+          tipo: "servicio",
+          estadoFecha: getEstadoFecha(p.fecha),
+        };
       })
+      .filter(Boolean)
       .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
     setServicios(data);
@@ -69,21 +76,24 @@ const Pendientes = () => {
   useEffect(() => {
     const data = instalaciones
       .filter((i) => i.activa && i.proximo_mantenimiento)
-      .map((i) => ({
-        id: i.id,
-        fecha: i.proximo_mantenimiento,
-        cliente_id: i.cliente_id,
-        cliente: clientesPorId[i.cliente_id],
-        instalacion_id: i.id,
-        instalacion: i,
-        notas: `Mantenimiento ${i.tipo_sistema}`,
-        tipo: "mantenimiento",
-        esHoy: esHoy(i.proximo_mantenimiento),
-      }))
-      .filter((i) => {
-        const f = new Date(i.fecha);
-        return f >= hoy && f <= limite;
+      .map((i) => {
+        const f = new Date(i.proximo_mantenimiento);
+
+        if (f > limite) return null;
+
+        return {
+          id: i.id,
+          fecha: i.proximo_mantenimiento,
+          cliente_id: i.cliente_id,
+          cliente: clientesPorId[i.cliente_id],
+          instalacion_id: i.id,
+          instalacion: i,
+          notas: `Mantenimiento ${i.tipo_sistema}`,
+          tipo: "mantenimiento",
+          estadoFecha: getEstadoFecha(i.proximo_mantenimiento),
+        };
       })
+      .filter(Boolean)
       .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
     setMantenimientos(data);

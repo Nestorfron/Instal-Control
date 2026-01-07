@@ -184,7 +184,7 @@ const Home = () => {
         <button onClick={() => navigate("/pendientes")}>
           <SummaryCard
             icon={Wrench}
-            label="Pendientes"
+            label="Servicios Pendientes"
             value={totalPendientes}
             color="text-orange-600"
           />

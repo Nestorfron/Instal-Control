@@ -16,7 +16,6 @@ export const AppProvider = ({ children }) => {
       try {
         const res = await fetchData("/clientes");
         setClientes(res.clientes);
-        console.log("Clientes cargados:", res.clientes);
       } catch (err) {
         console.error("Error cargando usuario:", err);
       }
@@ -25,7 +24,6 @@ export const AppProvider = ({ children }) => {
       try {
         const res = await fetchData("/instalaciones");
         setInstalaciones(res.instalaciones);
-        console.log("Instalaciones cargadas:", res.instalaciones);
       } catch (err) {
         console.error("Error cargando usuario:", err);
       }
@@ -34,7 +32,6 @@ export const AppProvider = ({ children }) => {
       try {
         const res = await fetchData("/pendientes");
         setPendientes(res.pendientes);
-        console.log("Pendientes cargadas:", res.pendientes);
       } catch (err) {
         console.error("Error cargando usuario:", err);
       }
