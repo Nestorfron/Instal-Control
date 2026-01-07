@@ -19,14 +19,28 @@ const Home = () => {
     navigate("/", { replace: true });
   };
 
+  const parseFechaLocal = (fecha) => {
+    if (!fecha) return null;
+    const [y, m, d] = fecha.split("T")[0].split("-");
+    return new Date(y, m - 1, d);
+  };
+  
+
   const DIAS_ADELANTE = 30;
-  const hoy = new Date();
-  const limite = new Date();
+
+  const hoy = parseFechaLocal(
+    new Date().toISOString().split("T")[0]
+  );
+  
+  const limite = new Date(hoy);
   limite.setDate(hoy.getDate() + DIAS_ADELANTE);
+  
 
   const instalacionesPendientes = instalaciones.filter((inst) => {
     if (!inst.proximo_mantenimiento) return false;
-    const fecha = new Date(inst.proximo_mantenimiento);
+
+    const fecha = parseFechaLocal(inst.proximo_mantenimiento);
+
     return inst.activa && fecha >= hoy && fecha <= limite;
   });
 

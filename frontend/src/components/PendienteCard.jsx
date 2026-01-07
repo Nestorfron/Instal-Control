@@ -4,25 +4,38 @@ import { useAppContext } from "../context/AppContext";
 import { postData, deleteData, putData } from "../utils/api";
 
 /* ======================
-   Helpers
+   HELPERS FECHA (SIN TIMEZONE BUG)
 ====================== */
-const diasRestantes = (fecha) => {
-  const diff = new Date(fecha) - new Date();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+const parseFechaLocal = (fecha) => {
+  if (!fecha) return null;
+  const [y, m, d] = fecha.split("-");
+  return new Date(y, m - 1, d);
 };
 
-const formatearFecha = (fecha) => new Date(fecha).toLocaleDateString("es-UY");
+const formatearFecha = (fecha) => {
+  const f = parseFechaLocal(fecha);
+  return f ? f.toLocaleDateString("es-UY") : "";
+};
+
+const diasRestantes = (fecha) => {
+  const f = parseFechaLocal(fecha);
+  if (!f) return 0;
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  const diff = f.getTime() - hoy.getTime();
+  return Math.round(diff / (1000 * 60 * 60 * 24));
+};
 
 /* ======================
-   Componente
+   COMPONENTE
 ====================== */
 const PendienteCard = ({ item, onResolved }) => {
   const { usuario, token } = useAppContext();
   const [loading, setLoading] = useState(false);
 
   if (!item) return null;
-
-  console.log("Item:", item);
 
   const cliente = item.cliente;
   const dias = diasRestantes(item.fecha);
@@ -33,7 +46,7 @@ const PendienteCard = ({ item, onResolved }) => {
     setLoading(true);
 
     try {
-      /* 1️⃣ Registrar mantenimiento realizado */
+      /* 1️⃣ Crear mantenimiento realizado */
       await postData(
         "/mantenimientos",
         {
@@ -48,20 +61,25 @@ const PendienteCard = ({ item, onResolved }) => {
       );
 
       /* 2️⃣ Si es mantenimiento → actualizar próximo */
-      if (item.tipo === "mantenimiento" && item.instalacion?.frecuencia_meses) {
-        const f = new Date(item.fecha);
+      if (
+        item.tipo === "mantenimiento" &&
+        item.instalacion?.frecuencia_meses
+      ) {
+        const f = parseFechaLocal(item.fecha);
         f.setMonth(f.getMonth() + item.instalacion.frecuencia_meses);
 
         await putData(
           `/instalaciones/${item.instalacion_id}`,
           {
-            proximo_mantenimiento: f.toISOString().split("T")[0],
+            proximo_mantenimiento: f
+              .toISOString()
+              .split("T")[0],
           },
           token
         );
       }
 
-      /* 3️⃣ SOLO si es servicio → eliminar pendiente */
+      /* 3️⃣ SOLO si es servicio → borrar pendiente */
       if (item.tipo === "servicio") {
         await deleteData(`/pendientes/${item.id}`, token);
       }
@@ -88,11 +106,7 @@ const PendienteCard = ({ item, onResolved }) => {
             <button
               onClick={handleResolver}
               disabled={loading}
-              className="
-                ml-auto rounded-full p-1
-                hover:bg-green-100 dark:hover:bg-green-900/30
-                transition disabled:opacity-50
-              "
+              className="ml-auto rounded-full p-1 hover:bg-green-100 dark:hover:bg-green-900/30 transition disabled:opacity-50"
               title="Marcar como realizado"
             >
               <Check className="h-6 w-6 text-green-600" />
@@ -143,14 +157,19 @@ const PendienteCard = ({ item, onResolved }) => {
             ${
               dias < 0
                 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+                : dias === 0
+                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
                 : dias <= 2
                 ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
                 : "bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300"
             }
           `}
         >
-          {" "}
-          {dias === 0 ? "Hoy" : dias < 0 ? "Vencido" : `Faltan ${dias} días`}
+          {dias < 0
+            ? "Vencido"
+            : dias === 0
+            ? "Hoy"
+            : `Faltan ${dias} días`}
         </span>
       </div>
     </div>
