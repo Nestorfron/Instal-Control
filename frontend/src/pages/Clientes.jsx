@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
-import { putData } from "../utils/api";
-import { Search, PlusCircle, Pencil } from "lucide-react";
+import { putData, deleteData } from "../utils/api";
+import { Search, PlusCircle, Pencil, Trash } from "lucide-react";
 import BottomNavbar from "../components/BottomNavbar";
 
 const ClientesPage = () => {
@@ -72,6 +72,16 @@ const ClientesPage = () => {
       alert("Error al actualizar el próximo mantenimiento");
     } finally {
       setLoadingInstalacion(false);
+    }
+  };
+
+  const handleEliminarMantenimiento = async (id) => {
+    try {
+      await deleteData(`/mantenimientos/${id}`, token);
+      await reLoadClientes();
+    } catch (error) {
+      console.error(error);
+      alert("Error al eliminar mantenimiento");
     }
   };
 
@@ -271,7 +281,18 @@ const ClientesPage = () => {
                                 key={mant.id}
                                 className="rounded border bg-white dark:bg-slate-800 p-2"
                               >
-                                <p className="text-sm">📅 {mant.fecha}</p>
+                                <div className="flex justify-between">
+                                  <p className="text-sm">📅 {mant.fecha}</p>
+                                  <button
+                                  onClick={() =>
+                                    handleEliminarMantenimiento(mant.id)
+                                  }
+                                  className="text-xs text-red-600 hover:underline"
+                                >
+                                  <Trash className="h-5 w-5 text-red-600" />
+                                </button>
+                                </div>
+                              
                                 {mant.notas && (
                                   <p className="text-xs text-gray-500">
                                     {mant.notas}

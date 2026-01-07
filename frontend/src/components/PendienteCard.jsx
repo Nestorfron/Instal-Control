@@ -4,12 +4,15 @@ import { useAppContext } from "../context/AppContext";
 import { postData, deleteData, putData } from "../utils/api";
 
 /* ======================
-   HELPERS FECHA (SIN TIMEZONE BUG)
+   HELPERS FECHA (ROBUSTOS)
 ====================== */
 const parseFechaLocal = (fecha) => {
   if (!fecha) return null;
-  const [y, m, d] = fecha.split("-");
-  return new Date(y, m - 1, d);
+
+  const [datePart] = fecha.split("T");
+  const [y, m, d] = datePart.split("-");
+
+  return new Date(Number(y), Number(m) - 1, Number(d));
 };
 
 const formatearFecha = (fecha) => {
@@ -24,15 +27,24 @@ const diasRestantes = (fecha) => {
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
 
-  const diff = f.getTime() - hoy.getTime();
-  return Math.round(diff / (1000 * 60 * 60 * 24));
+  return Math.round((f - hoy) / (1000 * 60 * 60 * 24));
+};
+
+const estaVencido = (fecha) => {
+  const f = parseFechaLocal(fecha);
+  if (!f) return false;
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  return f < hoy;
 };
 
 /* ======================
    COMPONENTE
 ====================== */
 const PendienteCard = ({ item, onResolved }) => {
-  const { usuario, token } = useAppContext();
+  const { usuario, token, reLoadInstalaciones } = useAppContext();
   const [loading, setLoading] = useState(false);
 
   if (!item) return null;
@@ -46,7 +58,7 @@ const PendienteCard = ({ item, onResolved }) => {
     setLoading(true);
 
     try {
-      /* 1️⃣ Crear mantenimiento realizado */
+      /* 1️⃣ Registrar mantenimiento realizado (SIEMPRE) */
       await postData(
         "/mantenimientos",
         {
@@ -60,18 +72,30 @@ const PendienteCard = ({ item, onResolved }) => {
         token
       );
 
-      /* 2️⃣ Si es mantenimiento → actualizar próximo */
+      /* 2️⃣ Recalcular próximo mantenimiento
+            👉 mantenimiento O servicio */
       if (
-        item.tipo === "mantenimiento" &&
-        item.instalacion?.frecuencia_meses
+        item.instalacion?.frecuencia_meses &&
+        (item.tipo === "mantenimiento" || item.tipo === "servicio")
       ) {
-        const f = parseFechaLocal(item.fecha);
-        f.setMonth(f.getMonth() + item.instalacion.frecuencia_meses);
+        const meses = Number(item.instalacion.frecuencia_meses);
+        if (!meses || isNaN(meses)) return;
+
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        const baseFecha = estaVencido(item.fecha)
+          ? hoy
+          : parseFechaLocal(item.fecha);
+
+        if (!baseFecha) return;
+
+        baseFecha.setMonth(baseFecha.getMonth() + meses);
 
         await putData(
           `/instalaciones/${item.instalacion_id}`,
           {
-            proximo_mantenimiento: f
+            proximo_mantenimiento: baseFecha
               .toISOString()
               .split("T")[0],
           },
@@ -79,12 +103,13 @@ const PendienteCard = ({ item, onResolved }) => {
         );
       }
 
-      /* 3️⃣ SOLO si es servicio → borrar pendiente */
-      if (item.tipo === "servicio") {
-        await deleteData(`/pendientes/${item.id}`, token);
-      }
+      /* 3️⃣ Recargar instalaciones */
+      reLoadInstalaciones();
 
-      /* 4️⃣ Avisar al padre */
+      /* 4️⃣ Eliminar pendiente (servicio o mantenimiento) */
+      await deleteData(`/pendientes/${item.id}`, token);
+
+      /* 5️⃣ Avisar al padre */
       onResolved?.(item.id);
     } catch (error) {
       console.error(error);
@@ -135,35 +160,29 @@ const PendienteCard = ({ item, onResolved }) => {
         <p className="text-xs text-red-500">Cliente no encontrado</p>
       )}
 
-      {/* DIVISOR */}
       <div className="my-3 border-t border-gray-100 dark:border-slate-700" />
 
-      {/* NOTAS */}
       {item.notas && (
-        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+        <p className="text-sm text-gray-700 dark:text-gray-300">
           {item.notas}
         </p>
       )}
 
-      {/* FOOTER */}
       <div className="mt-4 flex items-center justify-between">
         <span className="text-xs text-gray-500 dark:text-gray-400">
           {formatearFecha(item.fecha)}
         </span>
 
         <span
-          className={`
-            text-xs font-semibold px-2 py-0.5 rounded-full
-            ${
-              dias < 0
-                ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
-                : dias === 0
-                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
-                : dias <= 2
-                ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
-                : "bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300"
-            }
-          `}
+          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+            dias < 0
+              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300"
+              : dias === 0
+              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300"
+              : dias <= 2
+              ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300"
+              : "bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300"
+          }`}
         >
           {dias < 0
             ? "Vencido"
