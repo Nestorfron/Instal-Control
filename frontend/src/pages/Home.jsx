@@ -28,23 +28,31 @@ const Home = () => {
 
   const DIAS_ADELANTE = 30;
 
-  const hoy = parseFechaLocal(
-    new Date().toISOString().split("T")[0]
-  );
-  
-  const limite = new Date(hoy);
-  limite.setDate(hoy.getDate() + DIAS_ADELANTE);
-  
+const hoy = parseFechaLocal(
+  new Date().toISOString().split("T")[0]
+);
 
-  const instalacionesPendientes = instalaciones.filter((inst) => {
-    if (!inst.proximo_mantenimiento) return false;
+const limite = new Date(hoy);
+limite.setDate(hoy.getDate() + DIAS_ADELANTE);
 
-    const fecha = parseFechaLocal(inst.proximo_mantenimiento);
+const entraEnRango = (fecha) => {
+  if (!fecha) return false;
+  const f = parseFechaLocal(fecha);
+  return f <= limite; // pasados + hoy + hasta 30 días
+};
 
-    return inst.activa && fecha >= hoy && fecha <= limite;
-  });
+const serviciosEnRango = pendientes.filter(
+  (p) => p.fecha && entraEnRango(p.fecha)
+);
 
-  const totalPendientes = instalacionesPendientes.length + pendientes.length;
+const mantenimientosEnRango = instalaciones.filter((inst) => {
+  if (!inst.activa || !inst.proximo_mantenimiento) return false;
+  return entraEnRango(inst.proximo_mantenimiento);
+});
+
+const totalPendientes =
+  serviciosEnRango.length + mantenimientosEnRango.length;
+
 
   return (
     <div
