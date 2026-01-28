@@ -15,6 +15,8 @@ from api.models import (
     Instalacion,
     Mantenimiento,
     Pendiente,
+    Presupuesto,
+    Componente,
 )
 
 api = Blueprint("api", __name__)
@@ -463,6 +465,149 @@ def delete_pendiente(id):
     db.session.delete(pendiente)
     db.session.commit()
     return jsonify({"message": "Pendiente eliminado"}), 200
+
+# ======================
+# PRESUPUESTOS
+# ======================
+
+@api.route("/presupuestos", methods=["POST"])
+@jwt_required()
+def create_presupuesto():
+    data = request.get_json(silent=True)
+
+    presupuesto = Presupuesto(
+        empresa_id=data["empresa_id"],
+        cliente_id=data.get("cliente_id"),
+        cliente_nombre=data.get("cliente_nombre"),
+        cliente_telefono=data.get("cliente_telefono"),
+        cliente_direccion=data.get("cliente_direccion"),
+        cliente_email=data.get("cliente_email"),
+        tipo_sistema=data["tipo_sistema"],
+        descripcion=data["descripcion"],
+        total=data["total"],
+        estado="pendiente",
+        creado_por=data["creado_por"],
+    )
+
+    db.session.add(presupuesto)
+    db.session.commit()
+    return jsonify({"presupuesto": presupuesto.to_dict()}), 201
+
+@api.route("/presupuestos/<int:id>", methods=["PUT"])
+@jwt_required()
+def update_presupuesto(id):
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+    
+    presupuesto = Presupuesto.query.get(id)
+    if not presupuesto:
+        return jsonify({"message": "Presupuesto no encontrado"}), 404
+    
+    empresa_id = data.get("empresa_id")
+    cliente_id = data.get("cliente_id")
+    cliente_nombre = data.get("cliente_nombre")
+    cliente_telefono = data.get("cliente_telefono")
+    cliente_direccion = data.get("cliente_direccion")
+    cliente_email = data.get("cliente_email")
+    tipo_sistema = data["tipo_sistema"]
+    descripcion = data["descripcion"]
+    total = data["total"]
+    estado = data.get("estado")
+    creado_por = data.get("creado_por")
+
+    if empresa_id: presupuesto.empresa_id = empresa_id
+    if cliente_id: presupuesto.cliente_id = cliente_id
+    if cliente_nombre: presupuesto.cliente_nombre = cliente_nombre
+    if cliente_telefono: presupuesto.cliente_telefono = cliente_telefono
+    if cliente_direccion: presupuesto.cliente_direccion = cliente_direccion
+    if cliente_email: presupuesto.cliente_email = cliente_email
+    if tipo_sistema: presupuesto.tipo_sistema = tipo_sistema
+    if descripcion: presupuesto.descripcion = descripcion
+    if total: presupuesto.total = total
+    if estado: presupuesto.estado = estado
+    if creado_por: presupuesto.creado_por = creado_por
+    
+    db.session.commit()    
+    return jsonify({"presupuesto": presupuesto.to_dict()}), 200
+
+@api.route("/presupuestos/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_presupuesto(id):
+    presupuesto = Presupuesto.query.get(id)
+    if not presupuesto:
+        return jsonify({"message": "Presupuesto no encontrado"}), 404
+    
+    db.session.delete(presupuesto)
+    db.session.commit()
+    return jsonify({"message": "Presupuesto eliminado"}), 200   
+
+@api.route("/presupuestos", methods=["GET"])
+def get_presupuestos():
+    presupuestos = Presupuesto.query.all()
+    return jsonify({"presupuestos": [p.to_dict() for p in presupuestos]})
+
+@api.route("/presupuestos/<int:id>", methods=["GET"])
+def get_presupuesto_detalle(id):
+    presupuesto = Presupuesto.query.get(id)
+    if not presupuesto:
+        return jsonify({"message": "Presupuesto no encontrado"}), 404
+    
+    return jsonify({"presupuesto": presupuesto.to_dict()})
+
+# ======================
+# COMPONENTES
+# ======================
+@api.route("/componentes", methods=["POST"])
+@jwt_required()
+def create_componente():
+    data = request.get_json(silent=True)
+
+    componente = Componente(
+        presupuesto_id=data["presupuesto_id"],
+        nombre=data["nombre"],
+        cantidad=data["cantidad"],
+        precio=data["precio"],
+    )
+
+    db.session.add(componente)
+    db.session.commit()
+    return jsonify({"componente": componente.to_dict()}), 201
+
+@api.route("/componentes/<int:id>", methods=["PUT"])    
+@jwt_required()
+def update_componente(id):
+    data = request.get_json(force=True)
+    if not data:
+        return jsonify({"message": "Invalid JSON"}), 400
+    
+    componente = Componente.query.get(id)
+    if not componente:
+        return jsonify({"message": "Componente no encontrado"}), 404
+    
+    componente.nombre = data.get("nombre")
+    componente.cantidad = data.get("cantidad")
+    componente.precio = data.get("precio")
+    
+    db.session.commit()    
+    return jsonify({"componente": componente.to_dict()}), 200
+
+@api.route("/componentes/<int:id>", methods=["DELETE"])
+@jwt_required()
+def delete_componente(id):
+    componente = Componente.query.get(id)
+    if not componente:
+        return jsonify({"message": "Componente no encontrado"}), 404
+    
+    db.session.delete(componente)
+    db.session.commit()
+    return jsonify({"message": "Componente eliminado"}), 200   
+
+@api.route("/componentes", methods=["GET"])
+def get_componentes():
+    componentes = Componente.query.all()
+    return jsonify({"componentes": [c.to_dict() for c in componentes]})
+
 
 # ======================
 # CHANGE PASSWORD

@@ -9,6 +9,7 @@ export const AppProvider = ({ children }) => {
   const [clientes, setClientes] = useState([]);
   const [instalaciones, setInstalaciones] = useState([]);
   const [pendientes, setPendientes] = useState([]);
+  const [presupuestos, setPresupuestos] = useState([]);
 
   
   useEffect(() => {
@@ -36,9 +37,19 @@ export const AppProvider = ({ children }) => {
         console.error("Error cargando usuario:", err);
       }
     };
+    const loadPresupuestos = async () => {
+      try {
+        const res = await fetchData("/presupuestos");
+        setPresupuestos(res.presupuestos);
+        console.log(res.presupuestos);
+      } catch (err) {
+        console.error("Error cargando usuario:", err);
+      }
+    };
     loadClientes();
     loadInstalaciones();
     loadPendientes();
+    loadPresupuestos();
   }, []);
 
 
@@ -69,6 +80,15 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const reLoadPresupuestos = async () => {
+    try {
+      const res = await fetchData("/presupuestos");
+      setPresupuestos(res.presupuestos);
+    } catch (err) {
+      console.error("Error cargando usuario:", err);
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -85,6 +105,9 @@ export const AppProvider = ({ children }) => {
         pendientes,
         setPendientes,
         reLoadPendientes,
+        presupuestos,
+        setPresupuestos,
+        reLoadPresupuestos,
       }}
     >
       {children}

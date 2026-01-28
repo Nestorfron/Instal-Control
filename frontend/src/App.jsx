@@ -13,6 +13,9 @@ import Pendientes from "./pages/Pendientes";
 import NuevaInstalacion from "./pages/NuevaInstalacion";
 import EditarInstalacion from "./pages/EditarInstalacion";
 import NuevoPendientePage from "./pages/NuevoPendientePage";
+import Presupuestos from "./pages/Presupuestos";
+import PresupuestoDetalle from "./pages/PresupuestoDetallePage";
+import NuevoPresupuesto from "./pages/NuevoPresupuesto";
 
 
 function App() {
@@ -53,6 +56,9 @@ function App() {
           <Route path="/pendientes/nuevo" element={<NuevoPendientePage />} />          
           <Route path="/instalaciones/nueva/:clienteId" element={<NuevaInstalacion />} />
           <Route path="/instalaciones/:id/editar" element={<EditarInstalacion />} />
+          <Route path="/presupuestos" element={<Presupuestos />} />
+          <Route path="/presupuestos/:id" element={<PresupuestoDetalle />} />
+          <Route path="/presupuestos/nuevo" element={<NuevoPresupuesto />} />
         </Routes>
       </BrowserRouter>
 

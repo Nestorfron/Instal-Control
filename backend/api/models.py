@@ -50,6 +50,8 @@ class Empresa(db.Model):
 
     pendientes = db.relationship("Pendiente", back_populates="empresa", lazy="selectin", cascade="all, delete-orphan")
 
+    presupuestos = db.relationship("Presupuesto", back_populates="empresa", lazy="selectin", cascade="all, delete-orphan")
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -141,6 +143,8 @@ class Cliente(db.Model):
 
     pendientes = db.relationship("Pendiente", back_populates="cliente", lazy="selectin", cascade="all, delete-orphan")
 
+    presupuestos = db.relationship("Presupuesto", back_populates="cliente", lazy="selectin", cascade="all, delete-orphan")
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -155,6 +159,7 @@ class Cliente(db.Model):
             "activo": self.activo,
             "instalaciones": [i.to_dict() for i in self.instalaciones],
             "pendientes": [p.to_dict() for p in self.pendientes],
+            "presupuestos": [p.to_dict() for p in self.presupuestos],
         }
 
 
@@ -281,6 +286,65 @@ class Pendiente(db.Model):
             "fecha": self.fecha.isoformat(),
             "notas": self.notas,
         }
+
+# =========================
+# PRESUPUESTOS
+# =========================
+class Presupuesto(db.Model):
+    __tablename__ = "presupuestos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"))
+    cliente_nombre = db.Column(db.String(120))
+    cliente_telefono = db.Column(db.String(50))
+    cliente_direccion = db.Column(db.String(255))
+    cliente_email = db.Column(db.String(120))
+
+    tipo_sistema = db.Column(db.String(50))
+    descripcion = db.Column(db.Text)
+    total = db.Column(db.Float)
+
+    estado = db.Column(db.String(50), default="pendiente")
+    creado_por = db.Column(db.Integer, db.ForeignKey("usuarios.id"))
+
+    # RELACIONES
+    empresa = db.relationship("Empresa", back_populates="presupuestos")
+
+    cliente = db.relationship("Cliente", back_populates="presupuestos")
+
+    componentes = db.relationship("Componente", back_populates="presupuesto")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "empresa_id": self.empresa_id,
+            "cliente_id": self.cliente_id,
+            "cliente_nombre": self.cliente_nombre,
+            "cliente_telefono": self.cliente_telefono,
+            "cliente_direccion": self.cliente_direccion,
+            "cliente_email": self.cliente_email,
+            "tipo_sistema": self.tipo_sistema,
+            "descripcion": self.descripcion,
+            "total": self.total,
+            "estado": self.estado,
+            "creado_por": self.creado_por,
+            "componentes": [c.to_dict() for c in self.componentes],
+        }
+    
+# =========================
+# COMPONENTES
+# =========================
+class Componente(db.Model):
+    __tablename__ = "componentes"    
+    id = db.Column(db.Integer, primary_key=True)
+    presupuesto_id = db.Column(db.Integer, db.ForeignKey("presupuestos.id"), nullable=False)
+    nombre = db.Column(db.String(120), nullable=False)
+    cantidad = db.Column(db.Integer, nullable=False)
+    precio = db.Column(db.Float, nullable=False)
+    
+    # RELACIONES
+    presupuesto = db.relationship("Presupuesto", back_populates="componentes")
 
 # =========================
 # INDICES
